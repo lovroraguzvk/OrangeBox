@@ -1,0 +1,38 @@
+location: gitman_sources
+sources:
+  - repo: git@github.com:trabbel/mu_interface.git
+    name: mu_interface
+    rev: orange_box
+    type: git
+    params:
+    sparse_paths:
+      -
+    links:
+      -
+    scripts:
+      -
+  - repo: git@github.com:WatchPlant/BLE_Sink.git
+    name: BLE_Sink
+    rev: main
+    type: git
+    params:
+    sparse_paths:
+      -
+    links:
+      -
+    scripts:
+      -
+  - repo: git@github.com:WatchPlant/Zigbee_Sink.git
+    name: Zigbee_Sink
+    rev: main
+    type: git
+    params:
+    sparse_paths:
+      -
+    links:
+      -
+    scripts:
+      -
+default_group: ''
+groups:
+  -
