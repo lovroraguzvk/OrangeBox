@@ -1,4 +1,4 @@
-location: gitman_sources
+location: drivers
 sources:
   - repo: git@github.com:trabbel/mu_interface.git
     name: mu_interface

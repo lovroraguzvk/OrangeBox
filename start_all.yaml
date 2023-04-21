@@ -1,5 +1,5 @@
 name: orange_box_main
-root: ~/
+root: ~/orange_box
 
 # Optional tmux socket
 # socket_name: foo
@@ -48,21 +48,21 @@ windows:
         synchronize: after
         panes:
             - CYB0:
-                - cd ~/mu_interface/Sensor
+                - cd drivers/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB0 --dir $MEAS_DIR --int $MEAS_INT
             - CYB1: 
-                - cd ~/mu_interface/Sensor
+                - cd drivers/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB1 --dir $MEAS_DIR --int $MEAS_INT
             - CYB2: 
-                - cd ~/mu_interface/Sensor
+                - cd drivers/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB2 --dir $MEAS_DIR --int $MEAS_INT
     - Power:
-        - cd ~/mu_interface/Sensor
+        - cd drivers/mu_interface/Sensor
         - sudo python3 ina219.py --dir $MEAS_DIR/Power
     - BLE:
-        - cd ~/BLE_Sink
+        - cd drivers/BLE_Sink
         - python3 LetsMeasure.py --dir $MEAS_DIR/BLE
     - ZigBee:
-        - cd ~/Zigbee_Sink
+        - cd drivers/Zigbee_Sink
         - python3 DataSink.py --dir $MEAS_DIR/Zigbee
 
