@@ -1,5 +1,5 @@
 name: orange_box_main
-root: ~/orange_box
+root: ~/OrangeBox
 
 # Optional tmux socket
 # socket_name: foo
@@ -35,7 +35,7 @@ pre_window: source /boot/orange_box.config
 # startup_pane: 1
 
 # Controls whether the tmux session should be attached to automatically. Defaults to true.
-# attach: false
+attach: false
 
 # Runs after everything. Use it to attach to tmux with custom options etc.
 # post: tmux -CC attach -t plastenik
@@ -49,13 +49,13 @@ windows:
         panes:
             - CYB0:
                 - cd drivers/mu_interface/Sensor
-                - python3 main.py --port /dev/CYB0 --dir $MEAS_DIR --int $MEAS_INT
+                - python3 main.py --port /dev/CYB0 --dir $MEAS_DIR --int $MEAS_INT --multi
             - CYB1: 
                 - cd drivers/mu_interface/Sensor
-                - python3 main.py --port /dev/CYB1 --dir $MEAS_DIR --int $MEAS_INT
+                - python3 main.py --port /dev/CYB1 --dir $MEAS_DIR --int $MEAS_INT --multi
             - CYB2: 
                 - cd drivers/mu_interface/Sensor
-                - python3 main.py --port /dev/CYB2 --dir $MEAS_DIR --int $MEAS_INT
+                - python3 main.py --port /dev/CYB2 --dir $MEAS_DIR --int $MEAS_INT --multi
     - Power:
         - cd drivers/mu_interface/Sensor
         - sudo python3 ina219.py --dir $MEAS_DIR/Power

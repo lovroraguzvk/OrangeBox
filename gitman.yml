@@ -36,3 +36,37 @@ sources:
 default_group: ''
 groups:
   -
+sources_locked:
+  - repo: git@github.com:trabbel/mu_interface.git
+    name: mu_interface
+    rev: 0e5eb4e8a8c5b574607dfc5e4e13057e9753c4f0
+    type: git
+    params:
+    sparse_paths:
+      -
+    links:
+      -
+    scripts:
+      -
+  - repo: git@github.com:WatchPlant/BLE_Sink.git
+    name: BLE_Sink
+    rev: 80c14760d613f7b75029e475bb97fcf33a777690
+    type: git
+    params:
+    sparse_paths:
+      -
+    links:
+      -
+    scripts:
+      -
+  - repo: git@github.com:WatchPlant/Zigbee_Sink.git
+    name: Zigbee_Sink
+    rev: 4e8632ebb7cc84abb9254d5f99f6f961b0e0a391
+    type: git
+    params:
+    sparse_paths:
+      -
+    links:
+      -
+    scripts:
+      -
