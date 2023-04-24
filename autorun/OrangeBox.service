@@ -1,0 +1,10 @@
+[Unit]
+Description=Automatically run OrangeBox system
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/rock/OrangeBox/scripts/startup.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target
