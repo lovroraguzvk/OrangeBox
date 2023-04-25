@@ -13,16 +13,14 @@ import os
 import zmq
 
 # Global variables
-MEASUREMENT_PATH = pathlib.Path.home() / "measurements" #/ "measuerments" / "lrpi1"
+MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
 DISPLAY_LAST_HOURS = 2
 BOX_ID = 0
-PORT = "ACM0"
-ENERGY_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}energy"
-SUBDIRECTORY = f"rockwp{BOX_ID}_tty{PORT}"
+PORT = "CYB0"
+ENERGY_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}" / "energy"
+MEASUREMENT_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}" / PORT
 context = zmq.Context()
 SOCKET = context.socket(zmq.PUB)
-
-print(SUBDIRECTORY)
 
 # Set up the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
@@ -97,8 +95,8 @@ app.layout = dbc.Container(
                         dbc.Col(
                             [
                                 dcc.RadioItems(
-                                    ["ACM0", "ACM1", "ACM2"],
-                                    "ACM0",
+                                    ["CYB0", "CYB1", "CYB2"],
+                                    "CYB0",
                                     id="sensor-select",
                                     inline=True,
                                     inputStyle={
@@ -164,7 +162,7 @@ app.layout = dbc.Container(
                     width=12,
                 )
             ],
-            style={"margin-top": "20px", "title": "Measurement Data"},
+            style={"margin-top": "20px"},# "title": "Measurement Data"},
         ),
         dbc.Row(
             [
@@ -192,6 +190,20 @@ app.layout = dbc.Container(
                         ),
                         dbc.Button("Shutdown", id="orange_box-shutdown", outline=True, color="danger", className="me-1"),
                         dbc.Button("Reboot", id="orange_box-reboot", outline=True, color="danger", className="me-1"),
+                        dbc.Button("Show IP of selected Orange Box", id="orange_box-show_ip", outline=True, color="success", className="me-1"),
+                        dbc.Modal(
+                            [
+                                dbc.ModalHeader(dbc.ModalTitle("IP address of connected Orange Box")),
+                                dbc.ModalBody("ip", id="modal-body"),
+                                dbc.ModalFooter(
+                                    dbc.Button(
+                                        "Close", id="close", className="ms-auto", n_clicks=0
+                                    )
+                                ),
+                            ],
+                            id="modal",
+                            is_open=False,
+                        ),
                     ],
                     width=4,
                 ),
@@ -255,7 +267,7 @@ def shutdown(n):
     if n is None:
         raise dash.exceptions.PreventUpdate
     SOCKET.send_string("shutdown", flags=0)
-    return "success" if n%2==0 else "danger"
+    return "success"# if n%2==0 else "danger"
 
 
 # Callback for reboot button
@@ -267,7 +279,24 @@ def shutdown(n):
     if n is None:
         raise dash.exceptions.PreventUpdate
     SOCKET.send_string("reboot", flags=0)
-    return "success" if n%2==0 else "danger"
+    return "success"# if n%2==0 else "danger"
+
+
+# Callback for show ip button
+@app.callback(
+    [Output("modal", "is_open"), Output("modal-body", "children"), Output("orange_box-ip", "value")],
+    [Input("orange_box-show_ip", "n_clicks"), Input("close", "n_clicks")],
+    [State("modal", "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    file_names = os.listdir(ENERGY_PATH)
+    file_names.sort()
+    df = pd.read_csv(ENERGY_PATH / file_names[-1])
+    lastline = df.iloc[-1]
+    text = f"IP address of Orange Box {BOX_ID} is: {int(lastline[-4])}.{int(lastline[-3])}.{int(lastline[-2])}.{int(lastline[-1])}"
+    if n1 or n2:
+        return not is_open, text, f"{int(lastline[-4])}.{int(lastline[-3])}.{int(lastline[-2])}.{int(lastline[-1])}"
+    return is_open, text, f"{int(lastline[-4])}.{int(lastline[-3])}.{int(lastline[-2])}.{int(lastline[-1])}"
 
 
 # Callback to toggle settings collaps
@@ -293,7 +322,7 @@ def toggle_collapse(n, is_open):
 )
 def change_plot_settings(value1, value2, value3, value4, value5):
     trigger = ctx.triggered_id
-    global BOX_ID, PORT, SUBDIRECTORY, MEASUREMENT_PATH, ENERGY_PATH, DISPLAY_LAST_HOURS
+    global BOX_ID, PORT, MEASUREMENT_PATH, ENERGY_PATH, DISPLAY_LAST_HOURS
     if trigger == "measurement-path":
         new_path = pathlib.Path(value1)
         MEASUREMENT_PATH = new_path
@@ -302,14 +331,12 @@ def change_plot_settings(value1, value2, value3, value4, value5):
         ENERGY_PATH = new_path
     elif trigger == "sensor-select":
         PORT = value3
-        SUBDIRECTORY = f"rockwp{BOX_ID}_tty{PORT}"
+        MEASUREMENT_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}" / PORT
     elif trigger == "box_id-select":
         BOX_ID = value4
-        SUBDIRECTORY = f"rockwp{BOX_ID}_tty{PORT}"
-        ENERGY_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}energy"
+        ENERGY_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}" / "energy"
     elif trigger == "time-select":
         DISPLAY_LAST_HOURS = value5
-    print(SUBDIRECTORY)
     return None
 
 
@@ -320,9 +347,9 @@ def change_plot_settings(value1, value2, value3, value4, value5):
 )
 def update_plots(n):
     # Load the updated data from the CSV file
-    file_names = os.listdir(MEASUREMENT_PATH / SUBDIRECTORY)
+    file_names = os.listdir(MEASUREMENT_PATH)
     file_names.sort()
-    df = pd.read_csv(MEASUREMENT_PATH / SUBDIRECTORY / file_names[-1])
+    df = pd.read_csv(MEASUREMENT_PATH / file_names[-1])
     df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
 
     # Filter the data for the sliding window
@@ -342,6 +369,7 @@ def update_plots(n):
             "humidity_external",
             "differential_potential_ch1",
             "differential_potential_ch2",
+            "transpiration",
         ],
         title="Measurement Data",
         template="plotly",
@@ -357,7 +385,7 @@ def update_plots(n):
     df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
 
     fig3 = px.line(
-        df_window, x="timestamp", y = ["bus_voltage_solar","current_solar","bus_voltage_battery","current_battery"]#x="time", y=["value1", "value2"], title="Energy Consumption"
+        df_window, x="timestamp", y = ["bus_voltage_solar","current_solar","bus_voltage_battery","current_battery"], title="Energy Consumption"
     )
     fig3["layout"]["uirevision"] = "3"
     # Return the updated figures
@@ -366,4 +394,4 @@ def update_plots(n):
 
 # Run the app
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)
