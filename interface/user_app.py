@@ -1,16 +1,15 @@
+import os
+import pathlib
+from datetime import datetime, timedelta
+
+import zmq
 import dash
-from dash import dcc
-from dash import html
-from dash import ctx
-import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
+import dash_bootstrap_components as dbc
+from dash import dcc, html, ctx
 from dash.dependencies import Output, Input, State
-from datetime import datetime, timedelta
-import pathlib
 
-import os
-import zmq
 
 # Global variables
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"

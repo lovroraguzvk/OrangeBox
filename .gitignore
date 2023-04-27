@@ -2,3 +2,5 @@
 # Custom additions.
 drivers/
 status/
+interface/build/
+interface/dist/
