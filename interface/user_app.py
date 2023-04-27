@@ -9,6 +9,8 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 from dash import dcc, html, ctx
 from dash.dependencies import Output, Input, State
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 
 # Global variables
@@ -243,7 +245,6 @@ def change_IP(value):
     socket.connect(f"tcp://{value}:5557")
     global SOCKET
     SOCKET = socket
-    print(SOCKET)
     return False
 
 # Callback for change of measurement frequency
@@ -353,12 +354,7 @@ def update_plots(n):
 
     # Filter the data for the sliding window
     df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
-    #df_window = df.loc[
-    #    df["timestamp"]
-    #    > pd.Timestamp(year=2021, month=5, day=31, hour=14, minute=30)
-    #    - pd.Timedelta(hours=DISPLAY_LAST_HOURS)
-    #]
-    # Create the first plot
+    # Create the first plot (MU data)
     fig1 = px.line(
         df_window,
         x="timestamp",
@@ -375,7 +371,7 @@ def update_plots(n):
     )
     fig1["layout"]["uirevision"] = "1"
 
-    # Create the third plot
+
     # Load the updated data from the CSV file
     file_names = os.listdir(ENERGY_PATH)
     file_names.sort()
@@ -383,13 +379,47 @@ def update_plots(n):
     df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
     df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
 
-    fig3 = px.line(
-        df_window, x="timestamp", y = ["bus_voltage_solar","current_solar","bus_voltage_battery","current_battery"], title="Energy Consumption"
+    # Create the second plot (energy data)
+    fig2 = make_subplots(specs=[[{"secondary_y": True}]])
+    # Add traces
+    fig2.add_trace(
+        go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_solar"],
+        name="bus_voltage_solar", mode='lines', line_color="red", line = dict(dash='dash')), secondary_y=False,
     )
-    fig3["layout"]["uirevision"] = "3"
-    # Return the updated figures
-    return fig1, fig3
 
+    fig2.add_trace(
+        go.Scatter(x=df_window["timestamp"], y=df_window["current_solar"], name="current_solar", mode='lines', line_color="blue", line = dict(dash='dash')),
+        secondary_y=True,
+    )
+
+    fig2.add_trace(
+        go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_battery"],
+        name="bus_voltage_battery", mode='lines', line_color="red"), secondary_y=False,
+    )
+
+    fig2.add_trace(
+        go.Scatter(x=df_window["timestamp"], y=df_window["current_battery"], name="current_battery", mode='lines', line_color="blue"),
+        secondary_y=True,
+    )
+
+        # Add figure title
+    fig2.update_layout(title_text="Energy Consumption")
+
+    # Set x-axis title
+    fig2.update_xaxes(title_text="timestamp")
+
+    # Set y-axes titles
+    fig2.update_yaxes(
+        title_text="voltage [V]", 
+        color="red",
+        secondary_y=False)
+    fig2.update_yaxes(
+        title_text="current [mA]", 
+        color="blue",
+        secondary_y=True)
+    fig2["layout"]["uirevision"] = "3"
+    # Return the updated figures
+    return fig1, fig2
 
 # Run the app
 if __name__ == "__main__":
