@@ -48,19 +48,19 @@ windows:
         synchronize: after
         panes:
             - CYB0:
-                - cd drivers/mu_interface/Sensor
+                - cd drivers/mu_interface/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB0 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
             - CYB1: 
-                - cd drivers/mu_interface/Sensor
+                - cd drivers/mu_interface/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB1 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
             - CYB2: 
-                - cd drivers/mu_interface/Sensor
+                - cd drivers/mu_interface/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB2 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
     - Interface:
         layout: 'even-vertical'
         panes:
             - Power:
-                - cd drivers/mu_interface/Sensor
+                - cd drivers/mu_interface/mu_interface/Sensor
                 - sudo python3 ina219.py --addr $SINK --dir $MEAS_DIR/Power
             - Settings:
                 - cd interface
