@@ -4,7 +4,9 @@ if [ ! -f "$WIFI_FILE" ]; then
     source /boot/orange_box.config
     sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS" && \
     echo success > "$WIFI_FILE" && \
-    echo "Successfully created WIFI connection."
+    echo "Successfully created WIFI connection." && \
+    bash scripts/set_leds.sh
 else
     echo "WIFI connection was already created."
+    bash scripts/set_leds.sh
 fi
