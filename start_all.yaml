@@ -20,7 +20,7 @@ root: ~/OrangeBox
 # on_project_stop: command
 
 # Runs in each window and pane before window/pane specific commands. Useful for setting up interpreter versions.
-pre_window: source /boot/orange_box.config
+pre_window: source /home/rock/OrangeBox/config/orange_box.config
 
 # Pass command line options to tmux. Useful for specifying a different tmux.conf.
 # tmux_options: -f ~/.tmux.mac.conf
