@@ -1,4 +1,9 @@
-WIFI_FILE="/home/rock/OrangeBox/status/wifi_connect_success.txt"
+STATUS_DIR="/home/rock/OrangeBox/status/"
+WIFI_FILE="$STATUS_DIR/wifi_connect_success.txt"
+if [ ! -d "$STATUS_DIR" ]; then
+    mkdir -p "$STATUS_DIR"
+fi
+
 if [ ! -f "$WIFI_FILE" ]; then
     sleep 120
     source /boot/orange_box.config
