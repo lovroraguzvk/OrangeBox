@@ -7,6 +7,10 @@ fi
 
 sudo mkdir /media/usb
 sudo mount /dev/sda1 /media/usb
-cp /media/usb/orange_box.config "$CONFIG_FILE"
-dos2unix "$CONFIG_FILE"
+if [ -f "/media/usb/orange_box.config" ]; then
+    cp /media/usb/orange_box.config "$CONFIG_FILE"
+    dos2unix "$CONFIG_FILE"
+else
+    cp /home/rock/OrangeBox/config/example.config "$CONFIG_FILE"
+fi
 sudo umount /media/usb

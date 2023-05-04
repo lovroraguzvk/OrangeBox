@@ -39,7 +39,7 @@ groups:
 sources_locked:
   - repo: git@github.com:trabbel/mu_interface.git
     name: mu_interface
-    rev: c5cd8e1f307cb26a3620f3b0388af8dc0ed688ba
+    rev: f44d1faa3816ecd4192d014a3d3f7f44bed16efe
     type: git
     params:
     sparse_paths:
