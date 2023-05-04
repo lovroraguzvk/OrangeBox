@@ -227,7 +227,7 @@ app.layout = dbc.Container(
         ),
         dcc.Interval(
             id="interval-component",
-            interval=2 * 1000,
+            interval=5 * 1000,
             n_intervals=0,
         ),
     ],
@@ -346,78 +346,84 @@ def change_plot_settings(value1, value2, value3, value4, value5):
     [Input("interval-component", "n_intervals")],
 )
 def update_plots(n):
-    # Load the updated data from the CSV file
-    file_names = os.listdir(MEASUREMENT_PATH)
-    file_names.sort()
-    df = pd.read_csv(MEASUREMENT_PATH / file_names[-1])
-    df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
+    # Load the updated data from the CSV file (plant measurements)
+    try:
+        file_names = os.listdir(MEASUREMENT_PATH)
+        file_names.sort()
+        df = pd.read_csv(MEASUREMENT_PATH / file_names[-1])
+        df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
 
-    # Filter the data for the sliding window
-    df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
-    # Create the first plot (MU data)
-    fig1 = px.line(
-        df_window,
-        x="timestamp",
-        y=[
-            "temp_external",
-            "light_external",
-            "humidity_external",
-            "differential_potential_ch1",
-            "differential_potential_ch2",
-            "transpiration",
-        ],
-        title="Measurement Data",
-        template="plotly",
-    )
-    fig1["layout"]["uirevision"] = "1"
+        # Filter the data for the sliding window
+        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
+        # Create the first plot (MU data)
+        fig1 = px.line(
+            df_window,
+            x="timestamp",
+            y=[
+                "temp_external",
+                "light_external",
+                "humidity_external",
+                "differential_potential_ch1",
+                "differential_potential_ch2",
+                "transpiration",
+            ],
+            title="Measurement Data",
+            template="plotly",
+        )
+        fig1["layout"]["uirevision"] = "1"
+    except FileNotFoundError:
+        fig1 = {}
 
+    # Load the updated data from the CSV file (energy measurements)
+    try:
+        file_names = os.listdir(ENERGY_PATH)
+        file_names.sort()
+        df = pd.read_csv(ENERGY_PATH / file_names[-1])
+        df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
+        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
 
-    # Load the updated data from the CSV file
-    file_names = os.listdir(ENERGY_PATH)
-    file_names.sort()
-    df = pd.read_csv(ENERGY_PATH / file_names[-1])
-    df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
-    df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
+        # Create the second plot (energy data)
+        fig2 = make_subplots(specs=[[{"secondary_y": True}]])
+        # Add traces
+        fig2.add_trace(
+            go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_solar"],
+            name="bus_voltage_solar", mode='lines', line_color="red", line = dict(dash='dash')), secondary_y=False,
+        )
 
-    # Create the second plot (energy data)
-    fig2 = make_subplots(specs=[[{"secondary_y": True}]])
-    # Add traces
-    fig2.add_trace(
-        go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_solar"],
-        name="bus_voltage_solar", mode='lines', line_color="red", line = dict(dash='dash')), secondary_y=False,
-    )
+        fig2.add_trace(
+            go.Scatter(x=df_window["timestamp"], y=df_window["current_solar"], name="current_solar", mode='lines', line_color="blue", line = dict(dash='dash')),
+            secondary_y=True,
+        )
 
-    fig2.add_trace(
-        go.Scatter(x=df_window["timestamp"], y=df_window["current_solar"], name="current_solar", mode='lines', line_color="blue", line = dict(dash='dash')),
-        secondary_y=True,
-    )
+        fig2.add_trace(
+            go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_battery"],
+            name="bus_voltage_battery", mode='lines', line_color="red"), secondary_y=False,
+        )
 
-    fig2.add_trace(
-        go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_battery"],
-        name="bus_voltage_battery", mode='lines', line_color="red"), secondary_y=False,
-    )
+        fig2.add_trace(
+            go.Scatter(x=df_window["timestamp"], y=df_window["current_battery"], name="current_battery", mode='lines', line_color="blue"),
+            secondary_y=True,
+        )
 
-    fig2.add_trace(
-        go.Scatter(x=df_window["timestamp"], y=df_window["current_battery"], name="current_battery", mode='lines', line_color="blue"),
-        secondary_y=True,
-    )
+            # Add figure title
+        fig2.update_layout(title_text="Energy Consumption")
 
-        # Add figure title
-    fig2.update_layout(title_text="Energy Consumption")
+        # Set x-axis title
+        fig2.update_xaxes(title_text="timestamp")
 
-    # Set x-axis title
-    fig2.update_xaxes(title_text="timestamp")
-
-    # Set y-axes titles
-    fig2.update_yaxes(
-        title_text="voltage [V]", 
-        color="red",
-        secondary_y=False)
-    fig2.update_yaxes(
-        title_text="current [mA]", 
-        color="blue",
-        secondary_y=True)
-    fig2["layout"]["uirevision"] = "3"
+        # Set y-axes titles
+        fig2.update_yaxes(
+            title_text="voltage [V]", 
+            color="red",
+            secondary_y=False)
+        fig2.update_yaxes(
+            title_text="current [mA]", 
+            color="blue",
+            secondary_y=True)
+        fig2["layout"]["uirevision"] = "3"
+    except FileNotFoundError:
+        fig2 = {}
+    
     # Return the updated figures
     return fig1, fig2
 
