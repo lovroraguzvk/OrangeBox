@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 # Global variables
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
 DISPLAY_LAST_HOURS = 2
-BOX_ID = 0
+BOX_ID = 1
 PORT = "CYB0"
 ENERGY_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}" / "energy"
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements" / f"rockwp{BOX_ID}" / PORT
@@ -31,6 +31,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 app.layout = dbc.Container(
     [
         html.Div(id="intermediate-value", style={"display": "none"}),
+        # Name and settings button
         dbc.Row(
             [
                 dbc.Col(
@@ -55,6 +56,7 @@ app.layout = dbc.Container(
             style={"margin-top": "20px"},
         ),
         html.Hr(),
+        # Collapsable settings menu
         dbc.Collapse(
             [
                 dbc.Row(
@@ -146,6 +148,7 @@ app.layout = dbc.Container(
             id="settings-collapse",
             is_open=False,
         ),
+        # Main data plot
         dbc.Row(
             [
                 dbc.Col(
@@ -165,6 +168,7 @@ app.layout = dbc.Container(
             ],
             style={"margin-top": "20px"},# "title": "Measurement Data"},
         ),
+        # User controls and energy plot
         dbc.Row(
             [
                 dbc.Col(
@@ -225,9 +229,19 @@ app.layout = dbc.Container(
             ],
             style={"margin-top": "20px"},
         ),
+        # Modal confirm dialog
+        dcc.ConfirmDialog(
+            id="confirm_shutdown",
+            message="Are you sure you want to shutdown the Orange Box?",
+        ),
+        dcc.ConfirmDialog(
+            id="confirm_reboot",
+            message="Are you sure you want to reboot the Orange Box?",
+        ),
+        # Auto refresh
         dcc.Interval(
             id="interval-component",
-            interval=5 * 1000,
+            interval=2 * 1000,
             n_intervals=0,
         ),
     ],
@@ -258,28 +272,46 @@ def change_freq(value):
     SOCKET.send_string(f"freq {value}", flags=0)
     return False
 
+# Callback for confirm shutdown dialog
+@app.callback(
+    Output("confirm_shutdown", "displayed"),
+    [Input("orange_box-shutdown", "n_clicks")]
+)
+def confirm_shutdown(n_clicks):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
+    return True
+
+# Callback for confirm reboot dialog
+@app.callback(
+    Output("confirm_reboot", "displayed"),
+    [Input("orange_box-reboot", "n_clicks")]
+)
+def confirm_reboot(n_clicks):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
+    return True
+
 # Callback for shutdown button
 @app.callback(
     Output("orange_box-shutdown", "color"),
-    [Input("orange_box-shutdown", "n_clicks")],
+    [Input("confirm_shutdown", "submit_n_clicks")],
 )
-def shutdown(n):
-    if n is None:
-        raise dash.exceptions.PreventUpdate
-    SOCKET.send_string("shutdown", flags=0)
-    return "success"# if n%2==0 else "danger"
+def shutdown(submit_n_clicks):
+    if submit_n_clicks:
+        SOCKET.send_string("shutdown", flags=0)
+    return "danger" # if n%2==0 else "danger"
 
 
 # Callback for reboot button
 @app.callback(
     Output("orange_box-reboot", "color"),
-    [Input("orange_box-reboot", "n_clicks")],
+    [Input("confirm_reboot", "submit_n_clicks")],
 )
-def shutdown(n):
-    if n is None:
-        raise dash.exceptions.PreventUpdate
-    SOCKET.send_string("reboot", flags=0)
-    return "success"# if n%2==0 else "danger"
+def reboot(submit_n_clicks):
+    if submit_n_clicks:
+        SOCKET.send_string("reboot", flags=0)
+    return "danger" # if n%2==0 else "danger"
 
 
 # Callback for show ip button
