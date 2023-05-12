@@ -386,7 +386,7 @@ def update_plots(n):
         df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
 
         # Filter the data for the sliding window
-        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
+        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
         # Create the first plot (MU data)
         fig1 = px.line(
             df_window,
@@ -412,7 +412,7 @@ def update_plots(n):
         file_names.sort()
         df = pd.read_csv(ENERGY_PATH / file_names[-1])
         df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
-        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=2)]
+        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
 
         # Create the second plot (energy data)
         fig2 = make_subplots(specs=[[{"secondary_y": True}]])
