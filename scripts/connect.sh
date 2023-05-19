@@ -5,6 +5,8 @@ if [ ! -d "$STATUS_DIR" ]; then
     mkdir -p "$STATUS_DIR"
 fi
 
+LED_SETTING=0
+
 if [ ! -f "$WIFI_FILE" ]; then
     sleep 120
     bash scripts/copy_usb.sh "$CONFIG_FILE"
@@ -12,9 +14,11 @@ if [ ! -f "$WIFI_FILE" ]; then
     sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS" && \
     echo success > "$WIFI_FILE" && \
     echo "Successfully created WIFI connection." && \
-    bash scripts/set_leds.sh
+    LED_SETTING=1
 else
     sleep 30
     echo "WIFI connection was already created."
-    bash scripts/set_leds.sh
+    LED_SETTING=1
 fi
+
+bash scripts/set_leds.sh "$LED_SETTING"
