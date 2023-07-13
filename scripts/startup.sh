@@ -14,3 +14,5 @@ echo "Updating drivers complete."
 echo "Starting tmuxinator."
 tmuxinator start -p start_all.yaml
 echo "Tmuxinator running."
+
+# This is just a small comment to test how git behaves, it does nothing.
