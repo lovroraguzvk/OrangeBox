@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly PING_URL="https://www.github.com"
+readonly PING_URL="https://github.com"
 
 wget -q --tries=5 --timeout=2 --spider "$PING_URL"
 if [ $? -eq 0 ]; then
