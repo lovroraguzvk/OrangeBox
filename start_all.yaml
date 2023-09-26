@@ -61,7 +61,7 @@ windows:
         panes:
             - Power:
                 - cd drivers/mu_interface/mu_interface/Sensor
-                - sudo python3 ina219.py --addr $SINK --dir $MEAS_DIR/Power
+                - sudo -E python3 ina219.py --addr $SINK --dir $MEAS_DIR/Power
             - Settings:
                 - cd interface
                 - python3 setting_receiver.py
