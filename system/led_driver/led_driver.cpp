@@ -7,15 +7,15 @@ std::ifstream fifoStream;
 
 
 // Define the LED states
-const int GPIO_PIN = 2;
+const int GPIO_PIN = 11;
 ledTable  T[] =
 //Pin  St Loop  State 0          State 1            State 2          State 3         Wkup
 { 
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 250, 0}, {MB_HIGH, 250, 0}, {MB_HIGH, 250, 0}, {MB_HIGH, 250, 0}}, 0},	// POWER ON
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 250, 0}, {MB_LOW, 250, 0}, {MB_HIGH, 250, 0}, {MB_LOW, 250, 0}}, 0},		// KERNEL LOADED
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 50, 0}, {MB_LOW, 100, 0}, {MB_LOOP, 0, 0}, {MB_LOW, 850, 0}}, 0 },		// OFFLINE OPERATION
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 50, 0}, {MB_LOW, 100, 0}, {MB_LOOP, 1, 0}, {MB_LOW, 700, 0}}, 0 },		// ONLINE OPERATION
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 100, 0}, {MB_LOOP, 4, 0}, {MB_LOW, 0, 0}}, 0},			// ERROR
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}}, 0},	// POWER ON
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 500, 0}, {MB_LOW, 500, 0}, {MB_HIGH, 500, 0}, {MB_LOW, 500, 0}}, 0},		// KERNEL LOADED
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 0, 0}, {MB_LOW, 700, 0}}, 0 },		// OFFLINE OPERATION
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 1, 0}, {MB_LOW, 1400, 0}}, 0 },		// ONLINE OPERATION
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 200, 0}, {MB_LOW, 200, 0}, {MB_HIGH, 200, 0}, {MB_LOW, 200, 0}}, 0},		// ERROR
 };
 const int NUM_STEPS = 4;  // Number steps of LED blinking loop
 const int NUM_STATES = sizeof(T) / sizeof(T[0]);  // Number of states (different blinking modes)
@@ -24,6 +24,15 @@ volatile int STATE = 0;
 
 // Function to continuously call control_led() with the value of STATE
 void controlLED() {
+	mraa::Result status;
+	mraa::Gpio gpio_1(GPIO_PIN);
+	/* set GPIO to output */
+    status = gpio_1.dir(mraa::DIR_OUT);
+    if (status != mraa::SUCCESS) {
+        printError(status);
+        return;
+    }
+
 	auto start = std::chrono::steady_clock::now();
 
 	while (true) 
@@ -37,7 +46,15 @@ void controlLED() {
 			{
 				case MB_LOW:
 				case MB_HIGH:    // Write digital value
-					digitalWrite(T[STATE].ledPin, T[STATE].state[T[STATE].currentState].activeVal == MB_HIGH ? 1 : 0);
+#ifdef TESTING
+					consoleWrite(T[STATE].ledPin, T[STATE].state[T[STATE].currentState].activeVal == MB_HIGH ? 1 : 0);
+#else
+					status = gpio_1.write(T[STATE].state[T[STATE].currentState].activeVal == MB_HIGH ? 1 : 0);
+					// if (status != mraa::SUCCESS) {
+					// 	printError(status);
+					// 	return EXIT_FAILURE;
+					// }
+#endif					
 					T[STATE].currentState = (++T[STATE].currentState) % NUM_STEPS;
 					break;
 					

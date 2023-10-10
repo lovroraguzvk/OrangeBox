@@ -1,6 +1,9 @@
 #ifndef  MULTIBLINKH
 #define  MULTIBLINKH
 
+// #define TESTING
+
+#include <stdlib.h>
 #include <stdint.h>
 #include <iostream>
 #include <thread>
@@ -14,7 +17,10 @@
 #include <fcntl.h>
 #include <chrono>
 
-#define TESTING
+#ifndef TESTING
+#include "mraa/common.hpp"
+#include "mraa/gpio.hpp"
+#endif
 
 // State values for FSM
 #define  MB_NULL  0
@@ -41,14 +47,10 @@ typedef struct
 } ledTable;
 
 // Dummy function to simulate the Arduino digitalWrite() function
-void digitalWrite(int pin, int val)
+void consoleWrite(int pin, int val)
 {
-#ifdef TESTING
 	char c = (val) ? '*' : ' ';
 	std::cout << ' ' << c << '\r' << std::flush;
-#else
-    // TODO
-#endif
 }
 
 // Function to simulate millis() function
