@@ -1,0 +1,11 @@
+[Unit]
+Description=Drive status LED of the Orange Box
+
+[Service]
+Type=simple
+ExecStart=/home/rock/OrangeBox/system/led_driver/led_driver
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=OrangeBoxLed
+User=root
+Group=root

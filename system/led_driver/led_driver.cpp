@@ -2,7 +2,7 @@
 
 
 // Define the file path for the named FIFO pipe
-const std::string fifoFilePath = "/tmp/test"; // /var/run/... | /var/run/user/<userid>/... | /run/user/<userid>/... | /var/tmp/...
+const std::string fifoFilePath = "/tmp/led_state";
 std::ifstream fifoStream;
 
 

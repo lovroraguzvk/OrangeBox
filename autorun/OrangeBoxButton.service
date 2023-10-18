@@ -1,0 +1,11 @@
+[Unit]
+Description=Monitor the shutdown button of the Orange Box
+
+[Service]
+Type=simple
+ExecStart=/home/rock/OrangeBox/system/button_monitor/button_monitor
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=OrangeBoxButton
+User=root
+Group=root

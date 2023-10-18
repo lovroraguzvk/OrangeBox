@@ -1,3 +1,5 @@
+echo 1 > /tmp/led_state
+
 # Set working directory.
 cd /home/rock/OrangeBox
 
@@ -17,5 +19,6 @@ fi
 
 # Run the main tmuxinator file.
 echo "Starting tmuxinator."
+cd /home/rock/OrangeBox
 tmuxinator start -p start_all.yaml
 echo "Tmuxinator running."

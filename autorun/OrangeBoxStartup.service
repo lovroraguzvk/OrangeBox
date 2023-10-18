@@ -1,5 +1,7 @@
 [Unit]
 Description=Automatically run OrangeBox system
+Wants=OrangeBoxLed.service OrangeBoxButton.service
+After=OrangeBoxLed.service OrangeBoxButton.service
 
 [Service]
 Type=oneshot

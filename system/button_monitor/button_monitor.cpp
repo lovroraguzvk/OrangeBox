@@ -7,26 +7,15 @@ const int shutdownDuration = 3; // Duration in seconds to trigger shutdown
 
 void shutdown() {
     std::cout << "Performing system shutdown..." << std::endl;
-    // Replace with the command to execute your custom shutdown script
-    system("/path/to/your-custom-shutdown-script.sh");
+    system("/home/rock/OrangeBox/scripts/shutdown.sh");
 }
 
 int main() {
-    mraa::Result initResult = mraa::Result::SUCCESS;
-    mraa::Gpio button;
-
-    // Initialize MRAA
-    mraa::Result mraaInitResult = mraa::init();
-    if (mraaInitResult != mraa::Result::SUCCESS) {
-        std::cerr << "MRAA initialization failed. Error: " << mraaInitResult << std::endl;
-        return 1;
-    }
-
-    // Initialize the button GPIO pin
-    button = mraa::Gpio(buttonPin);
-    initResult = button.dir(mraa::DIR_IN);
-    if (initResult != mraa::Result::SUCCESS) {
-        std::cerr << "Failed to initialize the button GPIO. Error: " << initResult << std::endl;
+    mraa::Result status;
+    mraa::Gpio button(buttonPin);
+    status = button.dir(mraa::DIR_IN);
+    if (status != mraa::SUCCESS) {
+        printError(status);
         return 1;
     }
 
@@ -60,9 +49,6 @@ int main() {
         // Sleep for a short duration to avoid continuous checking
         usleep(100000); // 100 ms
     }
-
-    // Clean up MRAA
-    mraa::deinit();
 
     shutdown();
     
