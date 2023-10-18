@@ -1,6 +1,6 @@
 location: drivers
 sources:
-  - repo: git@github.com:trabbel/mu_interface.git
+  - repo: git@github.com:WatchPlant/mu_interface.git
     name: mu_interface
     rev: orange_box
     type: git
@@ -10,7 +10,7 @@ sources:
     links:
       -
     scripts:
-      -
+      - pip3 install -e .
   - repo: git@github.com:WatchPlant/BLE_Sink.git
     name: BLE_Sink
     rev: main
@@ -37,9 +37,9 @@ default_group: ''
 groups:
   -
 sources_locked:
-  - repo: git@github.com:trabbel/mu_interface.git
+  - repo: git@github.com:WatchPlant/mu_interface.git
     name: mu_interface
-    rev: 90e1dadd011813be83318beb0b41461df636e348
+    rev: d300328ec0c923ff86b0e84d25552b607dd3224d
     type: git
     params:
     sparse_paths:
@@ -47,7 +47,7 @@ sources_locked:
     links:
       -
     scripts:
-      -
+      - pip3 install -e .
   - repo: git@github.com:WatchPlant/BLE_Sink.git
     name: BLE_Sink
     rev: 80c14760d613f7b75029e475bb97fcf33a777690
