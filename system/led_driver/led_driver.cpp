@@ -49,7 +49,7 @@ void controlLED() {
 #ifdef TESTING
 					consoleWrite(T[STATE].ledPin, T[STATE].state[T[STATE].currentState].activeVal == MB_HIGH ? 1 : 0);
 #else
-					status = gpio_1.write(T[STATE].state[T[STATE].currentState].activeVal == MB_HIGH ? 1 : 0);
+					status = gpio_1.write(T[STATE].state[T[STATE].currentState].activeVal == MB_HIGH ? 0 : 1);
 					// if (status != mraa::SUCCESS) {
 					// 	printError(status);
 					// 	return EXIT_FAILURE;
