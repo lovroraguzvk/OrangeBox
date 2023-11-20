@@ -42,20 +42,23 @@ attach: false
 
 windows:
     - Blue Boxes:
-        layout: even-horizontal
+        layout: 'tiled'
         # Synchronize all panes of this window, can be enabled before or after the pane commands run.
         # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
         synchronize: after
         panes:
-            - CYB0:
-                - cd drivers/mu_interface/mu_interface/Sensor
-                - python3 main.py --port /dev/CYB0 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
-            - CYB1: 
+            - CYB1:
                 - cd drivers/mu_interface/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB1 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
             - CYB2: 
                 - cd drivers/mu_interface/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB2 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
+            - CYB3: 
+                - cd drivers/mu_interface/mu_interface/Sensor
+                - python3 main.py --port /dev/CYB3 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
+            - CYB4: 
+                - cd drivers/mu_interface/mu_interface/Sensor
+                - python3 main.py --port /dev/CYB4 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
     - Interface:
         layout: 'even-vertical'
         panes:

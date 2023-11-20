@@ -13,7 +13,7 @@ ledTable  T[] =
 { 
   { GPIO_PIN, 0, 0, {{MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}}, 0},	// POWER ON
   { GPIO_PIN, 0, 0, {{MB_HIGH, 500, 0}, {MB_LOW, 500, 0}, {MB_HIGH, 500, 0}, {MB_LOW, 500, 0}}, 0},		// KERNEL LOADED
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 0, 0}, {MB_LOW, 700, 0}}, 0 },		// OFFLINE OPERATION
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 0, 0}, {MB_LOW, 1700, 0}}, 0 },		// OFFLINE OPERATION
   { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 1, 0}, {MB_LOW, 1400, 0}}, 0 },		// ONLINE OPERATION
   { GPIO_PIN, 0, 0, {{MB_HIGH, 200, 0}, {MB_LOW, 200, 0}, {MB_HIGH, 200, 0}, {MB_LOW, 200, 0}}, 0},		// ERROR
 };
