@@ -59,7 +59,9 @@ connect_to_wifi () {
 
     if [ ! -f "$WIFI_FILE" ]; then
         sleep 120
-        copy_config_from_usb "$CONFIG_FILE"
+        if [ ! -f "$CONFIG_FILE" ]; then
+            copy_config_from_usb "$CONFIG_FILE"
+        fi
         source "$CONFIG_FILE"
         sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS" && \
         echo success > "$WIFI_FILE" && \
