@@ -68,10 +68,10 @@ windows:
             - Settings:
                 - cd interface
                 - python3 setting_receiver.py
-    # - BLE:
-    #     - cd drivers/BLE_Sink
-    #     - python3 LetsMeasure.py --dir $MEAS_DIR/BLE
-    # - ZigBee:
-    #     - cd drivers/Zigbee_Sink
-    #     - python3 DataSink.py --dir $MEAS_DIR/Zigbee
+    - BLE:
+        - cd drivers/BLE_Sink
+        - python3 LetsMeasure.py --dir $MEAS_DIR
+    - ZigBee:
+        - cd drivers/Zigbee_Sink
+        - python3 DataSink.py --dir $MEAS_DIR
 

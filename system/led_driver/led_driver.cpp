@@ -87,7 +87,7 @@ void controlLED() {
 		// Sleep for a while (simulating the LED control operation)
 		std::this_thread::sleep_for(
 			std::chrono::duration_cast<std::chrono::nanoseconds>(
-				std::chrono::duration<double>(0.001)));
+				std::chrono::duration<double>(0.01)));
 	}
 }
 

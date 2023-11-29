@@ -39,7 +39,7 @@ groups:
 sources_locked:
   - repo: git@github.com:WatchPlant/mu_interface.git
     name: mu_interface
-    rev: 5816a6198ec3b3716ddba748d13a0da7a6983d87
+    rev: 3c72a97ea08a78974238cb14fb02452a75daa86a
     type: git
     params:
     sparse_paths:
@@ -50,7 +50,7 @@ sources_locked:
       - pip3 install -e .
   - repo: git@github.com:WatchPlant/BLE_Sink.git
     name: BLE_Sink
-    rev: 80c14760d613f7b75029e475bb97fcf33a777690
+    rev: d215061cf744b718c0d2406c958122aacd16920b
     type: git
     params:
     sparse_paths:
@@ -61,7 +61,7 @@ sources_locked:
       -
   - repo: git@github.com:WatchPlant/Zigbee_Sink.git
     name: Zigbee_Sink
-    rev: 4e8632ebb7cc84abb9254d5f99f6f961b0e0a391
+    rev: c9d2fdedd2e3e9626c11c09a7df987713ca8fc86
     type: git
     params:
     sparse_paths:
