@@ -17,9 +17,10 @@ import plotly.graph_objects as go
 # Global variables
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
 DISPLAY_LAST_HOURS = 2
-PORT = "CYB1"
+PORT = "P06"
+SENSORTYP = "BLE"  # MU, BLE
 ENERGY_PATH = pathlib.Path.home() / "measurements" / "Power"
-MEASUREMENT_PATH = pathlib.Path.home() / "measurements" / PORT
+MEASUREMENT_PATH = pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
 # context = zmq.Context()
 # SOCKET = context.socket(zmq.PUB)
 
@@ -92,14 +93,34 @@ app.layout = dbc.Container(
                 dbc.Row(
                     [
                         dbc.Col(
+                            [html.Label("Sensortyp:?")],
+                            width=1,
+                        ),
+                        dbc.Col(
+                            [
+                                dcc.RadioItems(
+                                    ["BLE", "MU", ],
+                                    "MU",
+                                    id="sensotyp-select",
+                                    inline=True,
+                                    inputStyle={
+                                        "margin-left": "20px",
+                                        "margin-right": "10px",
+                                    },
+                                )
+                            ],
+                            width=2,
+                        ),
+
+                        dbc.Col(
                             [html.Label("What sensor node should be displayed?")],
                             width=3,
                         ),
                         dbc.Col(
                             [
                                 dcc.RadioItems(
-                                    ["CYB1", "CYB2", "CYB3", "CYB4"],
-                                    "CYB1",
+                                    ["CYB1", "CYB2", "CYB3", "CYB4", "P06"],
+                                    "P06",
                                     id="sensor-select",
                                     inline=True,
                                     inputStyle={
@@ -345,9 +366,13 @@ def change_plot_settings(value1, value2, value3, value4):
     elif trigger == "energy-path":
         new_path = pathlib.Path(value2)
         ENERGY_PATH = new_path
+    elif trigger == "sensortyyp-select":
+        #SENSORTYP = ?
+        PORT = "P06"
     elif trigger == "sensor-select":
         PORT = value3
-        MEASUREMENT_PATH = pathlib.Path.home() / "measurements" / PORT
+        SENSORTYP = "MU"
+        MEASUREMENT_PATH = pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
     elif trigger == "time-select":
         DISPLAY_LAST_HOURS = value4
     return None
@@ -360,29 +385,47 @@ def change_plot_settings(value1, value2, value3, value4):
 )
 def update_plots(n):
     # Load the updated data from the CSV file (plant measurements)
+    print("showing plot")
     try:
         file_names = os.listdir(MEASUREMENT_PATH)
         file_names.sort()
         df = pd.read_csv(MEASUREMENT_PATH / file_names[-1])
-        df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
+        df["datetime"] = pd.to_datetime(df["datetime"],format='%Y-%m-%d %H:%M:%S:%f')  # convert to datetime object
 
         # Filter the data for the sliding window
-        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
+        df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
         # Create the first plot (MU data)
-        fig1 = px.line(
-            df_window,
-            x="timestamp",
-            y=[
-                "temp_external",
-                "light_external",
-                "humidity_external",
-                "differential_potential_ch1",
-                "differential_potential_ch2",
-                "transpiration",
-            ],
-            title="Measurement Data",
-            template="plotly",
-        )
+        if SENSORTYP == "MU":
+            fig1 = px.line(
+                df_window,
+                x="datetime",
+                y=[
+                    "temp_external",
+                    "light_external",
+                    "humidity_external",
+                    "differential_potential_ch1",
+                    "differential_potential_ch2",
+                    "transpiration",
+                ],
+                title="Measurement Data",
+                template="plotly",
+            )
+        elif SENSORTYP == "BLE":
+            fig1 = px.line(
+                df_window,
+                x="datetime",
+                y=[
+                    "temperature1",
+                    "temperature2",
+                    "temperature3",
+                    "temperature4",
+                ],
+                title="Measurement Data",
+                template="plotly",
+            )
+
+
+
         fig1["layout"]["uirevision"] = "1"
     except FileNotFoundError:
         fig1 = {}
@@ -392,29 +435,29 @@ def update_plots(n):
         file_names = os.listdir(ENERGY_PATH)
         file_names.sort()
         df = pd.read_csv(ENERGY_PATH / file_names[-1])
-        df["timestamp"] = pd.to_datetime(df["timestamp"])  # convert to datetime object
-        df_window = df.loc[df['timestamp'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
+        df["datetime"] = pd.to_datetime(df["datetime"])  # convert to datetime object
+        df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
 
         # Create the second plot (energy data)
         fig2 = make_subplots(specs=[[{"secondary_y": True}]])
         # Add traces
         fig2.add_trace(
-            go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_solar"],
+            go.Scatter(x=df_window["datetime"], y=df_window["bus_voltage_solar"],
             name="bus_voltage_solar", mode='lines', line_color="red", line = dict(dash='dash')), secondary_y=False,
         )
 
         fig2.add_trace(
-            go.Scatter(x=df_window["timestamp"], y=df_window["current_solar"], name="current_solar", mode='lines', line_color="blue", line = dict(dash='dash')),
+            go.Scatter(x=df_window["datetime"], y=df_window["current_solar"], name="current_solar", mode='lines', line_color="blue", line = dict(dash='dash')),
             secondary_y=True,
         )
 
         fig2.add_trace(
-            go.Scatter(x=df_window["timestamp"], y=df_window["bus_voltage_battery"],
+            go.Scatter(x=df_window["datetime"], y=df_window["bus_voltage_battery"],
             name="bus_voltage_battery", mode='lines', line_color="red"), secondary_y=False,
         )
 
         fig2.add_trace(
-            go.Scatter(x=df_window["timestamp"], y=df_window["current_battery"], name="current_battery", mode='lines', line_color="blue"),
+            go.Scatter(x=df_window["datetime"], y=df_window["current_battery"], name="current_battery", mode='lines', line_color="blue"),
             secondary_y=True,
         )
 
@@ -422,7 +465,7 @@ def update_plots(n):
         fig2.update_layout(title_text="Energy Consumption")
 
         # Set x-axis title
-        fig2.update_xaxes(title_text="timestamp")
+        fig2.update_xaxes(title_text="datetime")
 
         # Set y-axes titles
         fig2.update_yaxes(
