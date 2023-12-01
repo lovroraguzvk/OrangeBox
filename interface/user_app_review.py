@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 # Global variables
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
 DISPLAY_LAST_HOURS = 1
-PORT = "P06"
+PORT = "PN06"
 SENSORTYP = "BLE"  # MU, BLE
 #ENERGY_PATH = pathlib.Path.home() / "measurements" / "Power"
 #MEASUREMENT_PATH = pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
@@ -26,12 +26,12 @@ SENSOR_LIST = []
 SENSORTYP_LIST = []
 DATAPATH_LIST = []
 
-for sensortyp in os.listdir(MEASUREMENT_PATH / "OB-KON-2_1"):
+for sensortyp in os.listdir(MEASUREMENT_PATH / "OB-KON-1_1"):
     SENSORTYP_LIST.append(sensortyp)
-    for sensor in os.listdir(MEASUREMENT_PATH / "OB-KON-2_1" /sensortyp):
+    for sensor in os.listdir(MEASUREMENT_PATH / "OB-KON-1_1" /sensortyp):
         SENSOR_LIST.append(sensor)
-        DATAPATH_LIST.append(MEASUREMENT_PATH / "OB-KON-2_1" / sensortyp / sensor)
-MEASUREMENT_PATH =  pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
+        DATAPATH_LIST.append(MEASUREMENT_PATH / "OB-KON-1_1" / sensortyp / sensor)
+MEASUREMENT_PATH =  pathlib.Path.home() / "measurements/OB-KON-1_1" / SENSORTYP / PORT
 
 # context = zmq.Context()
 # SOCKET = context.socket(zmq.PUB)
@@ -112,12 +112,12 @@ dbc.Row(
 )
 def change_source(value):
     global PORT, MEASUREMENT_PATH, DATAPATH_LIST, SENSORTYP
-    if "P06" in value:  # temperature node
+    if "PN06" in value:  # temperature node
         SENSORTYP = "BLE"
-        PORT = "P06"
-    elif "P" in value:  # electrical potential nodes
+        PORT = "PN06"
+    elif "PN" in value:  # electrical potential nodes
         SENSORTYP ="BLE"
-        PORT = "P99"
+        PORT = "PN99"
     elif "CYB" in value:
         SENSORTYP = "MU"
     for path in DATAPATH_LIST:
@@ -203,24 +203,23 @@ def update_plots(n):
                 title="Measurement Data",
                 template="plotly",
             )
-        elif SENSORTYP == "BLE" and PORT == "P06":
-            df_window.rename(columns={'temperature1': 'temperature_env_1', 'temperature2': 'temperature_env_2', 'temperature3': 'temperature_leaf_1', 'temperature4': 'temperature_leaf_2'}, inplace=True)
+        elif SENSORTYP == "BLE" and PORT == "PN06":
             fig1 = px.line(
                 df_window,
                 x="datetime",
-                y=["temperature_env_1",
-                    "temperature_env_2",
-                    "temperature_leaf_1",
-                    "temperature_leaf_2"
+                y=["temp_external_1",
+                    "temp_external_2",
+                    "temp_leaf_1",
+                    "temp_leaf_2"
                 ],
                 title="Measurement Data",
                 template="plotly",
             )
-        elif SENSORTYP == "BLE" and PORT == "P99":
+        elif SENSORTYP == "BLE" and PORT == "PN99":
             fig1 = px.line(
                 df_window,
                 x="datetime",
-                y="differential_potential",
+                y="differential_potential_ch1",
                 title="Measurement Data",
                 template="plotly",
             )
