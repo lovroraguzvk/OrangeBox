@@ -1,7 +1,15 @@
+from ast import In
+from ipaddress import ip_address
+from math import exp
 import os
 import pathlib
+import re
+import socket
 from datetime import datetime, timedelta
 from subprocess import Popen
+from turtle import ht
+from requests import get
+from sympy import O
 
 import zmq
 import dash
@@ -13,33 +21,134 @@ from dash.dependencies import Output, Input, State
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
+import utils
 
-# Global variables
+# Constants
+WIFI_FILE = pathlib.Path("/home/marko/PROJECTS/WatchPlant/OrangeBox/interface/orange_box.config")
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
+EXPERIMENT_PATH = MEASUREMENT_PATH / "Legion-MK_1"
+ENERGY_PATH = MEASUREMENT_PATH / "Power"
+
+
+
 DISPLAY_LAST_HOURS = 2
 PORT = "P06"
 SENSORTYP = "BLE"  # MU, BLE
-ENERGY_PATH = pathlib.Path.home() / "measurements" / "Power"
-MEASUREMENT_PATH = pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
+# MEASUREMENT_PATH = pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
 # context = zmq.Context()
 # SOCKET = context.socket(zmq.PUB)
 
+
+infoPane = dbc.Col(
+    [
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.H3("Orange Box Information")],
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button(
+                            "Refresh",
+                            id="refresh-button",
+                            color="primary",
+                            className="ml-auto",
+                        ),
+                    ]
+                ),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label(f"IP address:")],
+                    width='auto'
+                ),
+                dbc.Col(
+                    [html.Label(f"N/A", id="orange_box-ip")]
+                ),
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label(f"Hostname:")],
+                    width='auto'
+                ),
+                dbc.Col(
+                    [html.Label(f"N/A", id="orange_box-hostname")]
+                ),
+            ],
+        ),
+    ]
+)
+
+settingsPane = dbc.Col(
+    [
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.H3("Orange Box Settings")],
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button(
+                            "Write",
+                            id="update-button",
+                            color="primary",
+                            className="ml-auto",
+                        ),
+                    ],
+                        width='auto'
+                ),
+                dbc.Col(
+                    [html.Label(id="wifi-success", children="")],
+                )
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label(f"WiFi name:")],
+                    width='auto'
+                ),
+                dbc.Col(
+                    [dbc.Input(id="wifi-name", type="text", value="")],
+                    width=4,
+                )
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label(f"WiFi password:")],
+                    width='auto'
+                ),
+                dbc.Col(
+                    [dbc.Input(id="wifi-password", type="text", value="")],
+                    width=4,
+                )
+            ],
+        ),
+    ]
+)
+
+liveDataPlot = [
+    
+]
 # Set up the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
-
 
 # Define the layout
 app.layout = dbc.Container(
     [
-        html.Div(id="intermediate-value", style={"display": "none"}),
-        # Name and settings button
+        html.Div(id="default-div", style={"display": "none"}),
+        # Name
         dbc.Row(
             [
                 dbc.Col(
-                    [
-                        html.H1("WatchPlant Dashboard"),
-                    ],
-                    width=11,
+                    [html.H1("WatchPlant Dashboard")],
+                    width=True,
                 ),
                 dbc.Col(
                     [
@@ -56,105 +165,63 @@ app.layout = dbc.Container(
             ],
             style={"margin-top": "20px"},
         ),
-        html.Hr(),
         # Collapsable settings menu
         dbc.Collapse(
             [
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                html.Label("Measurment File Path"),
-                                dbc.Input(
-                                    type="text",
-                                    id="measurement-path",
-                                    value=str(MEASUREMENT_PATH),
-                                    debounce=True,
-                                    className="mb-3",
-                                ),
-                            ],
-                            width=6,
-                        ),
-                        dbc.Col(
-                            [
-                                html.Label("Energy Consumption File Path"),
-                                dbc.Input(
-                                    type="text",
-                                    id="energy-path",
-                                    value=str(ENERGY_PATH),
-                                    debounce=True,
-                                    className="mb-3",
-                                ),
-                            ],
-                            width=6,
-                        ),
-                    ]
-                ),
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [html.Label("Sensortyp:?")],
-                            width=1,
-                        ),
-                        dbc.Col(
-                            [
-                                dcc.RadioItems(
-                                    ["BLE", "MU", ],
-                                    "MU",
-                                    id="sensotyp-select",
-                                    inline=True,
-                                    inputStyle={
-                                        "margin-left": "20px",
-                                        "margin-right": "10px",
-                                    },
-                                )
-                            ],
-                            width=2,
-                        ),
-
-                        dbc.Col(
-                            [html.Label("What sensor node should be displayed?")],
-                            width=3,
-                        ),
-                        dbc.Col(
-                            [
-                                dcc.RadioItems(
-                                    ["CYB1", "CYB2", "CYB3", "CYB4", "P06"],
-                                    "P06",
-                                    id="sensor-select",
-                                    inline=True,
-                                    inputStyle={
-                                        "margin-left": "20px",
-                                        "margin-right": "10px",
-                                    },
-                                )
-                            ],
-                            width=4,
-                        ),
-                        dbc.Col(
-                            [html.Label("How many hours to display?")],
-                            width=2,
-                        ),
-                        dbc.Col(
-                            [
-                                dbc.Input(
-                                    type="number",
-                                    value=DISPLAY_LAST_HOURS,
-                                    min=1,
-                                    max=12,
-                                    id="time-select",
-                                ),
-                            ],
-                            width=1,
-                        ),
-                    ]
-                ),
                 html.Hr(),
+                dbc.Row(
+                    [
+                        infoPane,
+                        settingsPane
+                    ]
+                ),
             ],
             id="settings-collapse",
             is_open=False,
         ),
-        # Main data plot
+        html.Hr(),
+        # Live plot settings
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.H3("Live data plotting")], width=True)
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label("Select sensor node:")],
+                    width='auto',
+                ),
+                dbc.Col(
+                    [
+                        dcc.Dropdown(
+                            id="sensor-select",
+                            options=[],
+                            value="",
+                        )
+                    ],
+                    width=2,
+                ),
+                dbc.Col(
+                    [html.Label("How many hours to display?")],
+                    width=2,
+                ),
+                dbc.Col(
+                    [
+                        dbc.Input(
+                            type="number",
+                            value=DISPLAY_LAST_HOURS,
+                            min=1,
+                            max=12,
+                            id="time-select",
+                        ),
+                    ],
+                    width=1,
+                ),
+            ]
+        ),
+        # Live plot graph
         dbc.Row(
             [
                 dbc.Col(
@@ -180,15 +247,7 @@ app.layout = dbc.Container(
                 dbc.Col(
                     [
                         html.Hr(),
-                        html.H3("Orange Box Settings"),
-                        html.Label("IP address of Orange Box"),
-                        dbc.Input(
-                            type="text",
-                            id="orange_box-ip",
-                            value="172.16.0.197",
-                            debounce=True,
-                            className="mb-3",
-                        ),
+                        html.H3("Orange Box Configuration"),
                         html.Label("Change measurement frequency (in ms)"),
                         dbc.Input(
                             type="number",
@@ -220,6 +279,8 @@ app.layout = dbc.Container(
                 ),
                 dbc.Col(
                     [
+                        html.Hr(),
+                        html.H3("Live power consumption"),
                         dcc.Graph(
                             id="energy_plot",
                             config={
@@ -250,6 +311,7 @@ app.layout = dbc.Container(
             interval=10 * 1000,
             n_intervals=0,
         ),
+        dcc.Store(id="sensor-select-store", data=[])
     ],
     fluid=True,
 )
@@ -277,6 +339,63 @@ app.layout = dbc.Container(
 #         return True
 #     SOCKET.send_string(f"freq {value}", flags=0)
 #     return False
+
+@app.callback(
+    [
+        Output("orange_box-ip", "children"), 
+        Output("orange_box-hostname", "children"),
+        Output("wifi-name", "value"),
+        Output("wifi-password", "value"),
+    ],
+    Input("refresh-button", "n_clicks"),
+)
+def refresh_infoPane(value):
+    ip_address = utils.get_ip_address()
+    hostname = utils.get_hostname()
+    
+    wifi_config = utils.parse_config_file(WIFI_FILE)
+    wifi_name = wifi_config.get("SSID", "N/A")
+    wifi_password = wifi_config.get("PASS", "N/A")
+    
+    return ip_address, hostname, wifi_name, wifi_password
+
+
+@app.callback(
+        Output("wifi-success", "children"),
+        Input("update-button", "n_clicks"),
+        State("wifi-name", "value"),
+        State("wifi-password", "value"),
+)
+def update_settings(n_clicks, wifi_name, wifi_password):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
+    
+    try:
+        utils.write_config_file(WIFI_FILE, wifi_name, wifi_password)
+        return 'success'
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@app.callback(
+    [Output("sensor-select", "options"), Output("sensor-select", "value")],
+    Input("sensor-select-store", "data"),
+    Input("sensor-select", "value"),
+)
+def update_dropdown_options(options, selected_value):
+    return [{"label": entry, "value": entry} for entry in options], selected_value
+
+
+@app.callback(
+    Output("sensor-select-store", "data"),
+    Input("interval-component", "n_intervals"),
+)
+def update_storages(n):
+    experiment_path = pathlib.Path(EXPERIMENT_PATH)
+    nodes = [node.name for node_type in experiment_path.iterdir() for node in node_type.iterdir()]
+    
+    return sorted(nodes)
+
 
 # Callback for confirm shutdown dialog
 @app.callback(
@@ -320,23 +439,6 @@ def reboot(submit_n_clicks):
     return "danger" # if n%2==0 else "danger"
 
 
-# Callback for show ip button
-@app.callback(
-    [Output("modal", "is_open"), Output("modal-body", "children"), Output("orange_box-ip", "value")],
-    [Input("orange_box-show_ip", "n_clicks"), Input("close", "n_clicks")],
-    [State("modal", "is_open")],
-)
-def toggle_modal(n1, n2, is_open):
-    file_names = os.listdir(ENERGY_PATH)
-    file_names.sort()
-    df = pd.read_csv(ENERGY_PATH / file_names[-1])
-    lastline = df.iloc[-1]
-    text = f"IP address of Orange Box is: unknown"
-    if n1 or n2:
-        return not is_open, text, f"unknown"
-    return is_open, text, f"unknown"
-
-
 # Callback to toggle settings collaps
 @app.callback(
     Output("settings-collapse", "is_open"),
@@ -349,24 +451,16 @@ def toggle_collapse(n, is_open):
 
 # Callback to change settings
 @app.callback(
-    Output("intermediate-value", "children"),
+    Output("default-div", "children"),
     [
-        Input("measurement-path", "value"),
-        Input("energy-path", "value"),
         Input("sensor-select", "value"),
         Input("time-select", "value"),
     ],
 )
-def change_plot_settings(value1, value2, value3, value4):
+def change_plot_settings(value3, value4):
     trigger = ctx.triggered_id
     global PORT, MEASUREMENT_PATH, ENERGY_PATH, DISPLAY_LAST_HOURS
-    if trigger == "measurement-path":
-        new_path = pathlib.Path(value1)
-        MEASUREMENT_PATH = new_path
-    elif trigger == "energy-path":
-        new_path = pathlib.Path(value2)
-        ENERGY_PATH = new_path
-    elif trigger == "sensortyyp-select":
+    if trigger == "sensortyyp-select":
         #SENSORTYP = ?
         PORT = "P06"
     elif trigger == "sensor-select":
@@ -485,4 +579,4 @@ def update_plots(n):
 
 # Run the app
 if __name__ == "__main__":
-    app.run_server(host= '0.0.0.0', debug=False)
+    app.run_server(host= '0.0.0.0', debug=True)
