@@ -1,7 +1,5 @@
-from math import exp
 import socket
 
-from pytest import skip
 
 def get_ip_address():
     try:

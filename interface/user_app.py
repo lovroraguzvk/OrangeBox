@@ -1,6 +1,6 @@
 import os
 import pathlib
-from subprocess import Popen
+import subprocess
 
 import dash
 import dash_bootstrap_components as dbc
@@ -14,8 +14,8 @@ from plotly.subplots import make_subplots
 import utils
 
 # Constants
-WIFI_FILE = pathlib.Path("/home/marko/PROJECTS/WatchPlant/OrangeBox/interface/orange_box.config")
-EXP_NUMBER_FILE = pathlib.Path("/home/marko/PROJECTS/WatchPlant/OrangeBox/interface/experiment_number.txt")
+WIFI_FILE = pathlib.Path.home() / "OrangeBox/config/orange_box.config"
+EXP_NUMBER_FILE = pathlib.Path.home() / "OrangeBox/status/experiment_number.txt"
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
 ENERGY_PATH = MEASUREMENT_PATH / "Power"
 DEFAULT_PLOT_WINDOW = 2
@@ -209,6 +209,7 @@ powerPane = dbc.Col(
 
 # Set up the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
+server = app.server
 
 # Define the layout
 app.layout = dbc.Container(
@@ -401,6 +402,8 @@ def write_settingsPane(n_clicks, wifi_name, wifi_password):
     
     try:
         utils.write_config_file(WIFI_FILE, wifi_name, wifi_password)
+        subprocess.run("rm /home/rock/OrangeBox/status/wifi_connect_success.txt", shell=True)
+        subprocess.run("sudo rm /etc/NetworkManager/system-connections/*", shell=True)
         return 'success'
     except Exception as e:
         return f"Error: {e}"
@@ -459,7 +462,7 @@ def reboot_button(n_clicks):
 )
 def confirm_shutdown(submit_n_clicks):
     if submit_n_clicks:
-        Popen("~/OrangeBox/scripts/shutdown.sh", shell=True)
+        subprocess.run("~/OrangeBox/scripts/shutdown.sh", shell=True)
     return "danger" # if n%2==0 else "danger"
 
 
@@ -469,7 +472,7 @@ def confirm_shutdown(submit_n_clicks):
 )
 def confirm_reboot(submit_n_clicks):
     if submit_n_clicks:
-        Popen("sudo shutdown -r now", shell=True)
+        subprocess.run("sudo shutdown -r now", shell=True)
     return "danger" # if n%2==0 else "danger"
 
 
@@ -526,21 +529,29 @@ def update_plots(n, sensor_select, time_select, data_path):
             "temp_leaf_1",
             "temp_leaf_2",
         ],
+    elif sensor_select.startswith("Z"):
+        sensor_type = "Zigbee"
+        data_fields = [
+            "temp_external",
+            "humidity_external",
+            "air_pressure",
+            "mag_X",
+            "mag_Y",
+            "mag_Z"
+        ]
     else:
-        return fig_data, fig_power
+        sensor_type = ""
+        data_fields = []
     
-    data_dir = pathlib.Path(data_path) / sensor_type / sensor_select
-    
-    print(data_dir)
-    
-    try:
-        file_names = os.listdir(data_dir)
-        file_names.sort()
-        df = pd.read_csv(data_dir / file_names[-1])
-        df["datetime"] = pd.to_datetime(df["datetime"],format='%Y-%m-%d %H:%M:%S:%f')  # convert to datetime object
-        df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=time_select)]
+    if sensor_type:
+        data_dir = pathlib.Path(data_path) / sensor_type / sensor_select
+        try:
+            file_names = os.listdir(data_dir)
+            file_names.sort()
+            df = pd.read_csv(data_dir / file_names[-1])
+            df["datetime"] = pd.to_datetime(df["datetime"],format='%Y-%m-%d %H:%M:%S:%f')  # convert to datetime object
+            df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=time_select)]
 
-        if sensor_type == "MU":
             fig_data = px.line(
                 df_window,
                 x="datetime",
@@ -548,16 +559,8 @@ def update_plots(n, sensor_select, time_select, data_path):
                 title="Measurement Data",
                 template="plotly",
             )
-        elif sensor_type == "BLE":
-            fig_data = px.line(
-                df_window,
-                x="datetime",
-                y=data_fields,
-                title="Measurement Data",
-                template="plotly",
-            )
-    except FileNotFoundError:
-        pass
+        except FileNotFoundError:
+            pass
 
     # Load the updated data from the CSV file (energy measurements)
     try:
@@ -619,4 +622,5 @@ def update_plots(n, sensor_select, time_select, data_path):
 
 # Run the app
 if __name__ == "__main__":
-    app.run_server(host= '0.0.0.0', debug=True)
+    app.run_server(host= '0.0.0.0', debug=False)
+    # app.run_server(host='0.0.0.0', port=8050)
