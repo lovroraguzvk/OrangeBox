@@ -1,4 +1,7 @@
+from math import exp
 import socket
+
+from pytest import skip
 
 def get_ip_address():
     try:
@@ -33,4 +36,14 @@ def write_config_file(file_path, wifi_ssid, wifi_pass, sink_ip="127.0.0.1"):
         f.write(f"export SSID=\"{wifi_ssid}\"\n")
         f.write(f"export PASS=\"{wifi_pass}\"\n")
         f.write(f"export SINK=\"{sink_ip}\"\n")
-                
+
+def update_experiment_number(file_path, skip_update=False):
+    with open(file_path, "r") as f:
+        experiment_number = int(f.read().strip())
+        
+    if not skip_update:
+        experiment_number += 1
+        with open(file_path, "w") as f:
+            f.write(str(experiment_number))
+
+    return experiment_number

@@ -1,42 +1,24 @@
-from ast import In
-from ipaddress import ip_address
-from math import exp
 import os
 import pathlib
-import re
-import socket
-from datetime import datetime, timedelta
 from subprocess import Popen
-from turtle import ht
-from requests import get
-from sympy import O
 
-import zmq
 import dash
+import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
-import dash_bootstrap_components as dbc
-from dash import dcc, html, ctx
-from dash.dependencies import Output, Input, State
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from dash import dcc, html
+from dash.dependencies import Input, Output, State
+from plotly.subplots import make_subplots
 
 import utils
 
 # Constants
 WIFI_FILE = pathlib.Path("/home/marko/PROJECTS/WatchPlant/OrangeBox/interface/orange_box.config")
+EXP_NUMBER_FILE = pathlib.Path("/home/marko/PROJECTS/WatchPlant/OrangeBox/interface/experiment_number.txt")
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
-EXPERIMENT_PATH = MEASUREMENT_PATH / "Legion-MK_1"
 ENERGY_PATH = MEASUREMENT_PATH / "Power"
-
-
-
-DISPLAY_LAST_HOURS = 2
-PORT = "P06"
-SENSORTYP = "BLE"  # MU, BLE
-# MEASUREMENT_PATH = pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
-# context = zmq.Context()
-# SOCKET = context.socket(zmq.PUB)
+DEFAULT_PLOT_WINDOW = 2
 
 
 infoPane = dbc.Col(
@@ -133,21 +115,112 @@ settingsPane = dbc.Col(
     ]
 )
 
-liveDataPlot = [
+configPane = dbc.Col(
+    [
+        html.Hr(),
+        html.H3("Orange Box Configuration"),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label("Change measurement frequency (in ms)")],
+                    width='auto'
+                ),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Input(
+                            type="number",
+                            id="orange_box-freq",
+                            value="10000",
+                            min="100",
+                            max="10000000",
+                            debounce=True,
+                            className="mb-3",
+                        ),
+                    ],
+                    width=4,
+                ),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label("System shutdown/reboot")],
+                    width='auto'
+                ),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Button("Shutdown", id="orange_box-shutdown", outline=True, color="danger", className="me-1"),
+                        dbc.Button("Reboot", id="orange_box-reboot", outline=True, color="danger", className="me-1"),
+                        dbc.Modal(
+                            [
+                                dbc.ModalHeader(dbc.ModalTitle("IP address of connected Orange Box")),
+                                dbc.ModalBody("ip", id="modal-body"),
+                                dbc.ModalFooter(
+                                    dbc.Button(
+                                        "Close", id="close", className="ms-auto", n_clicks=0
+                                    )
+                                ),
+                            ],
+                            id="modal",
+                            is_open=False,
+                        ),
+                    ]
+                )
+            ]
+        ),
+        # Modal confirm dialog
+        dcc.ConfirmDialog(
+            id="confirm_shutdown",
+            message="Are you sure you want to shutdown the Orange Box?",
+        ),
+        dcc.ConfirmDialog(
+            id="confirm_reboot",
+            message="Are you sure you want to reboot the Orange Box?",
+        ),
+    ],
+    width=4,
+)
     
-]
+powerPane = dbc.Col(
+    [
+        html.Hr(),
+        html.H3("Live power consumption"),
+        dcc.Graph(
+            id="energy_plot",
+            config={
+                "displaylogo": False,
+                "edits": {"legendPosition": True},
+                "modeBarButtonsToRemove": ["autoScale2d"],
+                "scrollZoom": True,
+            },
+        )
+    ],
+    width=8,
+)
+
+
 # Set up the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
 # Define the layout
 app.layout = dbc.Container(
     [
-        html.Div(id="default-div", style={"display": "none"}),
+        html.Div(id="dummy-div-default", style={"display": "none"}),
+        html.Div(id="dummy-div-plot", style={"display": "none"}),
+        html.Div(id="dummy-div-other", style={"display": "none"}),
         # Name
         dbc.Row(
             [
                 dbc.Col(
-                    [html.H1("WatchPlant Dashboard")],
+                    [html.H1(f"WatchPlant Dashboard | {utils.get_hostname()}")],
                     width=True,
                 ),
                 dbc.Col(
@@ -179,8 +252,40 @@ app.layout = dbc.Container(
             id="settings-collapse",
             is_open=False,
         ),
+        # Experiment information
         html.Hr(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.H3("Experiment Information")], width=True)
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [html.Label("Experiment number:")],
+                    width='auto',
+                ),
+                dbc.Col(
+                    [
+                        html.Label(id="experiment-number", children=""),
+                    ],
+                    width=1,
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button("New experiment", 
+                                   id="new-experiment", 
+                                   outline=True,
+                                   disabled=True, 
+                                   color="primary", 
+                                   className="me-1"),
+                    ]
+                )
+            ]
+        ),
         # Live plot settings
+        html.Hr(),
         dbc.Row(
             [
                 dbc.Col(
@@ -211,7 +316,7 @@ app.layout = dbc.Container(
                     [
                         dbc.Input(
                             type="number",
-                            value=DISPLAY_LAST_HOURS,
+                            value=DEFAULT_PLOT_WINDOW,
                             min=1,
                             max=12,
                             id="time-select",
@@ -244,66 +349,10 @@ app.layout = dbc.Container(
         # User controls and energy plot
         dbc.Row(
             [
-                dbc.Col(
-                    [
-                        html.Hr(),
-                        html.H3("Orange Box Configuration"),
-                        html.Label("Change measurement frequency (in ms)"),
-                        dbc.Input(
-                            type="number",
-                            id="orange_box-freq",
-                            value="10000",
-                            min="100",
-                            max="10000000",
-                            debounce=True,
-                            className="mb-3",
-                        ),
-                        dbc.Button("Shutdown", id="orange_box-shutdown", outline=True, color="danger", className="me-1"),
-                        dbc.Button("Reboot", id="orange_box-reboot", outline=True, color="danger", className="me-1"),
-                        dbc.Button("Show IP of selected Orange Box", id="orange_box-show_ip", outline=True, color="success", className="me-1"),
-                        dbc.Modal(
-                            [
-                                dbc.ModalHeader(dbc.ModalTitle("IP address of connected Orange Box")),
-                                dbc.ModalBody("ip", id="modal-body"),
-                                dbc.ModalFooter(
-                                    dbc.Button(
-                                        "Close", id="close", className="ms-auto", n_clicks=0
-                                    )
-                                ),
-                            ],
-                            id="modal",
-                            is_open=False,
-                        ),
-                    ],
-                    width=4,
-                ),
-                dbc.Col(
-                    [
-                        html.Hr(),
-                        html.H3("Live power consumption"),
-                        dcc.Graph(
-                            id="energy_plot",
-                            config={
-                                "displaylogo": False,
-                                "edits": {"legendPosition": True},
-                                "modeBarButtonsToRemove": ["autoScale2d"],
-                                "scrollZoom": True,
-                            },
-                        )
-                    ],
-                    width=8,
-                ),
+                configPane,
+                powerPane
             ],
             style={"margin-top": "20px"},
-        ),
-        # Modal confirm dialog
-        dcc.ConfirmDialog(
-            id="confirm_shutdown",
-            message="Are you sure you want to shutdown the Orange Box?",
-        ),
-        dcc.ConfirmDialog(
-            id="confirm_reboot",
-            message="Are you sure you want to reboot the Orange Box?",
         ),
         # Auto refresh
         dcc.Interval(
@@ -311,35 +360,15 @@ app.layout = dbc.Container(
             interval=10 * 1000,
             n_intervals=0,
         ),
-        dcc.Store(id="sensor-select-store", data=[])
+        # Storage elements
+        dcc.Store(id="data-path-store", data=[]),
     ],
     fluid=True,
 )
 
-# Callback for changing IP
-# @app.callback(
-#     Output("orange_box-ip", "invalid"),
-#     [Input("orange_box-ip", "value")],
-# )
-# def change_IP(value):
-#     context = zmq.Context()
-#     socket = context.socket(zmq.PUB)
-#     socket.connect(f"tcp://{value}:5557")
-#     global SOCKET
-#     SOCKET = socket
-#     return False
 
-# Callback for change of measurement frequency
-# @app.callback(
-#     Output("orange_box-freq", "invalid"),
-#     [Input("orange_box-freq", "value")],
-# )
-# def change_freq(value):
-#     if value is None:
-#         return True
-#     SOCKET.send_string(f"freq {value}", flags=0)
-#     return False
-
+# Interactive callbacks
+#######################
 @app.callback(
     [
         Output("orange_box-ip", "children"), 
@@ -366,7 +395,7 @@ def refresh_infoPane(value):
         State("wifi-name", "value"),
         State("wifi-password", "value"),
 )
-def update_settings(n_clicks, wifi_name, wifi_password):
+def write_settingsPane(n_clicks, wifi_name, wifi_password):
     if n_clicks is None:
         raise dash.exceptions.PreventUpdate
     
@@ -378,68 +407,72 @@ def update_settings(n_clicks, wifi_name, wifi_password):
 
 
 @app.callback(
-    [Output("sensor-select", "options"), Output("sensor-select", "value")],
-    Input("sensor-select-store", "data"),
-    Input("sensor-select", "value"),
+    [Output("experiment-number", "children"), Output("data-path-store", "data")],
+    Input("new-experiment", "n_clicks"),
+    Input("orange_box-hostname", "children"),
 )
-def update_dropdown_options(options, selected_value):
-    return [{"label": entry, "value": entry} for entry in options], selected_value
+def new_experiment(n_clicks, hostname):
+    skip_update = False
+    if n_clicks is None:
+        skip_update = True
+            
+    experiment_number = utils.update_experiment_number(EXP_NUMBER_FILE, skip_update=skip_update)
+    
+    return experiment_number, f"{MEASUREMENT_PATH}/{hostname}_{experiment_number}"
 
 
 @app.callback(
-    Output("sensor-select-store", "data"),
-    Input("interval-component", "n_intervals"),
+    Output("dummy-div-other", "children", allow_duplicate=True),
+    Input("orange_box-freq", "value"),
+    prevent_initial_call=True,
 )
-def update_storages(n):
-    experiment_path = pathlib.Path(EXPERIMENT_PATH)
-    nodes = [node.name for node_type in experiment_path.iterdir() for node in node_type.iterdir()]
-    
-    return sorted(nodes)
+def update_measure_freq(value):
+    # TODO: write on orange box
+    return None
 
 
-# Callback for confirm shutdown dialog
 @app.callback(
     Output("confirm_shutdown", "displayed"),
     [Input("orange_box-shutdown", "n_clicks")]
 )
-def confirm_shutdown(n_clicks):
+def shutdown_button(n_clicks):
     if n_clicks is None:
         raise dash.exceptions.PreventUpdate
     return True
 
-# Callback for confirm reboot dialog
+
 @app.callback(
     Output("confirm_reboot", "displayed"),
     [Input("orange_box-reboot", "n_clicks")]
 )
-def confirm_reboot(n_clicks):
+def reboot_button(n_clicks):
     if n_clicks is None:
         raise dash.exceptions.PreventUpdate
     return True
 
-# Callback for shutdown button
+
+# Modal callbacks
+#################
 @app.callback(
     Output("orange_box-shutdown", "color"),
     [Input("confirm_shutdown", "submit_n_clicks")],
 )
-def shutdown(submit_n_clicks):
+def confirm_shutdown(submit_n_clicks):
     if submit_n_clicks:
         Popen("~/OrangeBox/scripts/shutdown.sh", shell=True)
     return "danger" # if n%2==0 else "danger"
 
 
-# Callback for reboot button
 @app.callback(
     Output("orange_box-reboot", "color"),
     [Input("confirm_reboot", "submit_n_clicks")],
 )
-def reboot(submit_n_clicks):
+def confirm_reboot(submit_n_clicks):
     if submit_n_clicks:
         Popen("sudo shutdown -r now", shell=True)
     return "danger" # if n%2==0 else "danger"
 
 
-# Callback to toggle settings collaps
 @app.callback(
     Output("settings-collapse", "is_open"),
     [Input("settings-button", "n_clicks")],
@@ -449,80 +482,82 @@ def toggle_collapse(n, is_open):
     return not is_open if n else is_open
 
 
-# Callback to change settings
+# Periodic callbacks
+####################
 @app.callback(
-    Output("default-div", "children"),
-    [
-        Input("sensor-select", "value"),
-        Input("time-select", "value"),
-    ],
+    Output("sensor-select", "options"),
+    [Input("interval-component", "n_intervals"), Input("data-path-store", "data")]
 )
-def change_plot_settings(value3, value4):
-    trigger = ctx.triggered_id
-    global PORT, MEASUREMENT_PATH, ENERGY_PATH, DISPLAY_LAST_HOURS
-    if trigger == "sensortyyp-select":
-        #SENSORTYP = ?
-        PORT = "P06"
-    elif trigger == "sensor-select":
-        PORT = value3
-        SENSORTYP = "MU"
-        MEASUREMENT_PATH = pathlib.Path.home() / "measurements/OB-KON-2_1" / SENSORTYP / PORT
-    elif trigger == "time-select":
-        DISPLAY_LAST_HOURS = value4
-    return None
+def update_storages(n, data_path):
+    experiment_path = pathlib.Path(data_path)
+    nodes = [node.name for node_type in experiment_path.iterdir() for node in node_type.iterdir()]
+    
+    return [{"label": entry, "value": entry} for entry in sorted(nodes)]
 
 
-# Callback to update live plots
 @app.callback(
     [Output("mu_plot", "figure"), Output("energy_plot", "figure")],
-    [Input("interval-component", "n_intervals")],
+    [
+        Input("interval-component", "n_intervals"),
+        Input("sensor-select", "value"),
+        Input("time-select", "value"),
+        Input("data-path-store", "data"),
+    ]
 )
-def update_plots(n):
-    # Load the updated data from the CSV file (plant measurements)
-    print("showing plot")
+def update_plots(n, sensor_select, time_select, data_path):
+    fig_data = {}
+    fig_power = {}
+    
+    if sensor_select.startswith("CYB"):
+        sensor_type = "MU"
+        data_fields = [
+            "temp_external",
+            "light_external",
+            "humidity_external",
+            "differential_potential_ch1",
+            "differential_potential_ch2",
+            "transpiration",
+        ]
+    elif sensor_select.startswith("PN"):
+        sensor_type = "BLE"
+        data_fields = [
+            "temp_external_1",
+            "temp_external_2",
+            "temp_leaf_1",
+            "temp_leaf_2",
+        ],
+    else:
+        return fig_data, fig_power
+    
+    data_dir = pathlib.Path(data_path) / sensor_type / sensor_select
+    
+    print(data_dir)
+    
     try:
-        file_names = os.listdir(MEASUREMENT_PATH)
+        file_names = os.listdir(data_dir)
         file_names.sort()
-        df = pd.read_csv(MEASUREMENT_PATH / file_names[-1])
+        df = pd.read_csv(data_dir / file_names[-1])
         df["datetime"] = pd.to_datetime(df["datetime"],format='%Y-%m-%d %H:%M:%S:%f')  # convert to datetime object
+        df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=time_select)]
 
-        # Filter the data for the sliding window
-        df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
-        # Create the first plot (MU data)
-        if SENSORTYP == "MU":
-            fig1 = px.line(
+        if sensor_type == "MU":
+            fig_data = px.line(
                 df_window,
                 x="datetime",
-                y=[
-                    "temp_external",
-                    "light_external",
-                    "humidity_external",
-                    "differential_potential_ch1",
-                    "differential_potential_ch2",
-                    "transpiration",
-                ],
+                y=data_fields,
                 title="Measurement Data",
                 template="plotly",
             )
-        elif SENSORTYP == "BLE":
-            fig1 = px.line(
+        elif sensor_type == "BLE":
+            fig_data = px.line(
                 df_window,
                 x="datetime",
-                y=[
-                    "temperature1",
-                    "temperature2",
-                    "temperature3",
-                    "temperature4",
-                ],
+                y=data_fields,
                 title="Measurement Data",
                 template="plotly",
             )
-
-
-
-        fig1["layout"]["uirevision"] = "1"
     except FileNotFoundError:
-        fig1 = {}
+        pass
 
     # Load the updated data from the CSV file (energy measurements)
     try:
@@ -530,52 +565,57 @@ def update_plots(n):
         file_names.sort()
         df = pd.read_csv(ENERGY_PATH / file_names[-1])
         df["datetime"] = pd.to_datetime(df["datetime"])  # convert to datetime object
-        df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=DISPLAY_LAST_HOURS)]
+        df_window = df.loc[df['datetime'] > pd.Timestamp.now() - pd.Timedelta(hours=time_select)]
 
         # Create the second plot (energy data)
-        fig2 = make_subplots(specs=[[{"secondary_y": True}]])
+        fig_power = make_subplots(specs=[[{"secondary_y": True}]])
         # Add traces
-        fig2.add_trace(
+        fig_power.add_trace(
             go.Scatter(x=df_window["datetime"], y=df_window["bus_voltage_solar"],
             name="bus_voltage_solar", mode='lines', line_color="red", line = dict(dash='dash')), secondary_y=False,
         )
 
-        fig2.add_trace(
+        fig_power.add_trace(
             go.Scatter(x=df_window["datetime"], y=df_window["current_solar"], name="current_solar", mode='lines', line_color="blue", line = dict(dash='dash')),
             secondary_y=True,
         )
 
-        fig2.add_trace(
+        fig_power.add_trace(
             go.Scatter(x=df_window["datetime"], y=df_window["bus_voltage_battery"],
             name="bus_voltage_battery", mode='lines', line_color="red"), secondary_y=False,
         )
 
-        fig2.add_trace(
+        fig_power.add_trace(
             go.Scatter(x=df_window["datetime"], y=df_window["current_battery"], name="current_battery", mode='lines', line_color="blue"),
             secondary_y=True,
         )
 
             # Add figure title
-        fig2.update_layout(title_text="Energy Consumption")
+        fig_power.update_layout(title_text="Energy Consumption")
 
         # Set x-axis title
-        fig2.update_xaxes(title_text="datetime")
+        fig_power.update_xaxes(title_text="datetime")
 
         # Set y-axes titles
-        fig2.update_yaxes(
+        fig_power.update_yaxes(
             title_text="voltage [V]", 
             color="red",
             secondary_y=False)
-        fig2.update_yaxes(
+        fig_power.update_yaxes(
             title_text="current [mA]", 
             color="blue",
             secondary_y=True)
-        fig2["layout"]["uirevision"] = "3"
     except FileNotFoundError:
-        fig2 = {}
+        pass
+        
+    if fig_data:
+        fig_data["layout"]["uirevision"] = "1"
+    if fig_power:
+        fig_power["layout"]["uirevision"] = "3"
     
     # Return the updated figures
-    return fig1, fig2
+    return fig_data, fig_power
+
 
 # Run the app
 if __name__ == "__main__":
