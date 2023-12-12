@@ -42,10 +42,10 @@ set_leds () {
     if [[ $LED_SETTING -eq 3 ]]; then
         sudo sh -c "echo 0 > /sys/class/leds/rockpis\:blue\:user/brightness"
         sudo sh -c "echo heartbeat > /sys/class/leds/rockpis\:green\:power/trigger"
-    # Show failure: green led flashing, blue led flashing
+    # Show failure: green led off, blue led flashing
     elif [[ $LED_SETTING -eq 2 ]]; then
         sudo sh -c "echo heartbeat > /sys/class/leds/rockpis\:blue\:user/trigger"
-        sudo sh -c "echo heartbeat > /sys/class/leds/rockpis\:green\:power/trigger"
+        sudo sh -c "echo 0 > /sys/class/leds/rockpis\:green\:power/trigger"
     fi
 }
 
@@ -120,7 +120,7 @@ main () {
     # Run the main tmuxinator file.
     echo "Starting tmuxinator."
     cd /home/rock/OrangeBox
-    tmuxinator start -p start_all.yaml
+    tmuxinator start -p main.yaml "$RUN_MODE"
     echo "Tmuxinator running."
 }
 

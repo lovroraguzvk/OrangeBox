@@ -1,10 +1,9 @@
 
 # Custom additions.
 .vscode/
+**/__pycache__
 drivers/
 status/
-interface/build/
-interface/dist/
 system/led_driver/led_driver
 system/button_monitor/button_monitor
 config/orange_box.config
