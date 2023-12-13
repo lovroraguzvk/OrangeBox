@@ -45,7 +45,7 @@ set_leds () {
     # Show failure: green led off, blue led flashing
     elif [[ $LED_SETTING -eq 2 ]]; then
         sudo sh -c "echo heartbeat > /sys/class/leds/rockpis\:blue\:user/trigger"
-        sudo sh -c "echo 0 > /sys/class/leds/rockpis\:green\:power/trigger"
+        sudo sh -c "echo 0 > /sys/class/leds/rockpis\:green\:power/brightness"
     fi
 }
 
