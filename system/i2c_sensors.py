@@ -67,14 +67,15 @@ while True:
     bus_voltage_battery = round(ina219_battery.bus_voltage, 2)    # voltage on V- (load side)
     current_battery = round(ina219_battery.current, 1)            # current in mA
     
+    temperature = 0
+    humidity = 0
     if temp_is_available:
-        temperature = round(shtc3.temperature, 2)                 # temperature in degrees Celsius
-        humidity = round(shtc3.relative_humidity, 2)              # relative humidity in %
-        print(f"Temperature: {temperature} °C, Humidity: {humidity} %")
-    else:
-        temperature = 0
-        humidity = 0
-
+        try:
+            temperature = round(shtc3.temperature, 2)                 # temperature in degrees Celsius
+            humidity = round(shtc3.relative_humidity, 2)              # relative humidity in %
+            print(f"Temperature: {temperature} °C, Humidity: {humidity} %")
+        except Exception as e:
+            print(f"Error reading temperature and humidity: {e}")
 
     # Publish data over ZMQ.
     payload = np.array([int(datetime.now().timestamp()), 
