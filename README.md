@@ -9,6 +9,8 @@ This repository forms the main structure of important system components:
 * User interface
 * Hardware interfaces and components managed by [gitman](https://gitman.readthedocs.io/en/latest/).
 
-### For detailed information, check out the [Wiki](../../wiki)
+### For detailed information, check out the [Wiki](../../wiki).
+
+### For the old version of the Orange Box the Wiki was relocated [here](https://github.com/WatchPlant/OrangeBox/blob/docs/README.md).
 
 
