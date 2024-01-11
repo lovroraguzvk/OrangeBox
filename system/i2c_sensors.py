@@ -12,6 +12,7 @@ from adafruit_shtc3 import SHTC3
 
 from mu_interface.Utilities.data2csv import data2csv
 from mu_interface.Utilities.utils import TimeFormat
+from system.telegram_bot.telegram_bot import broadcast_message
 
 ## Parse arguments.
 parser = argparse.ArgumentParser(description="Arguments for the sensor node.")
@@ -66,6 +67,9 @@ while True:
     current_solar = round(ina219_solar.current, 1)                # current in mA
     bus_voltage_battery = round(ina219_battery.bus_voltage, 2)    # voltage on V- (load side)
     current_battery = round(ina219_battery.current, 1)            # current in mA
+
+    if bus_voltage_battery < 3.2:
+        broadcast_message("Battery Voltage Is Low. Shutting Down!")
     
     if temp_is_available:
         temperature = round(shtc3.temperature, 2)                 # temperature in degrees Celsius

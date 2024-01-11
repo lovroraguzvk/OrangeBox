@@ -615,6 +615,10 @@ def update_plots(n, sensor_select, time_select, data_path):
         fig_data["layout"]["uirevision"] = "1"
     if fig_power:
         fig_power["layout"]["uirevision"] = "3"
+
+    # Save images
+    fig_power.write_image('proba_pow.png')
+    fig_data.write_image('proba_data.png')
     
     # Return the updated figures
     return fig_data, fig_power

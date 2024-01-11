@@ -68,6 +68,12 @@ windows:
             - Settings:
                 - cd interface
                 - python3 user_app.py
+    - Bot:
+        layout: 'even-vertical'
+        panes:
+            - Bot:
+                - cd system/telegram_bot/telegram_bot
+                - python3 telegram_bot.py
     <%- if args[0] == "all" %>
     - BLE:
         - cd drivers/BLE_Sink
@@ -76,4 +82,5 @@ windows:
         - cd drivers/Zigbee_Sink
         - python3 DataSink.py --dir $MEAS_DIR
     <%- end %>
+
 
