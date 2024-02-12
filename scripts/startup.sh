@@ -51,6 +51,7 @@ set_leds () {
 
 connect_to_wifi () {
     local CONFIG_FILE="/home/rock/OrangeBox/config/orange_box.config"
+    local DEFAULT_FILE="/home/rock/OrangeBox/config/default.config"
     local STATUS_DIR="/home/rock/OrangeBox/status/"
     local WIFI_FILE="$STATUS_DIR/wifi_connect_success.txt"
     if [ ! -d "$STATUS_DIR" ]; then
@@ -63,9 +64,14 @@ connect_to_wifi () {
             copy_config_from_usb "$CONFIG_FILE"
         fi
         source "$CONFIG_FILE"
-        sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS" && \
-        echo success > "$WIFI_FILE" && \
-        echo "Successfully created WIFI connection."
+        if sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS"; then
+            echo success > "$WIFI_FILE"
+            echo "Successfully created WIFI connection."
+        else
+            source "$DEFAULT_FILE"
+            sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS" && \
+            echo "Failed to create WIFI connection. Connected to default network instead."
+        fi
     else
         sleep 30
         echo "WIFI connection was already created."
