@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html
+from dash import dcc, html, ctx
 from dash.dependencies import Input, Output, State
 from plotly.subplots import make_subplots
 
@@ -35,30 +35,32 @@ infoPane = dbc.Col(
                             id="refresh-button",
                             color="primary",
                             className="ml-auto",
+                            size="md",
                         ),
                     ]
                 ),
-            ]
+            ],
+            align="center"
         ),
         dbc.Row(
             [
                 dbc.Col(
-                    [html.Label(f"IP address:")],
+                    [html.Label("IP address:")],
                     width='auto'
                 ),
                 dbc.Col(
-                    [html.Label(f"N/A", id="orange_box-ip")]
+                    [html.Label("N/A", id="orange_box-ip")]
                 ),
             ],
         ),
         dbc.Row(
             [
                 dbc.Col(
-                    [html.Label(f"Hostname:")],
+                    [html.Label("Hostname:")],
                     width='auto'
                 ),
                 dbc.Col(
-                    [html.Label(f"N/A", id="orange_box-hostname")]
+                    [html.Label("N/A", id="orange_box-hostname")]
                 ),
             ],
         ),
@@ -79,6 +81,7 @@ settingsPane = dbc.Col(
                             id="update-button",
                             color="primary",
                             className="ml-auto",
+                            size="md",
                         ),
                     ],
                         width='auto'
@@ -86,31 +89,34 @@ settingsPane = dbc.Col(
                 dbc.Col(
                     [html.Label(id="wifi-success", children="")],
                 )
-            ]
+            ],
+            align="center"
         ),
         dbc.Row(
             [
                 dbc.Col(
-                    [html.Label(f"WiFi name:")],
-                    width='auto'
+                    [html.Label("WiFi name:")],
+                    width=2
                 ),
                 dbc.Col(
-                    [dbc.Input(id="wifi-name", type="text", value="")],
+                    [dbc.Input(id="wifi-name", type="text", value="", size='sm')],
                     width=4,
                 )
             ],
+            align="center"
         ),
         dbc.Row(
             [
                 dbc.Col(
-                    [html.Label(f"WiFi password:")],
-                    width='auto'
+                    [html.Label("WiFi password:")],
+                    width=2
                 ),
                 dbc.Col(
-                    [dbc.Input(id="wifi-password", type="text", value="")],
+                    [dbc.Input(id="wifi-password", type="text", value="", size='sm')],
                     width=4,
                 )
             ],
+            align="center"
         ),
     ]
 )
@@ -208,7 +214,7 @@ powerPane = dbc.Col(
 
 
 # Set up the Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
 server = app.server
 
 # Define the layout
@@ -231,6 +237,7 @@ app.layout = dbc.Container(
                             id="settings-button",
                             color="primary",
                             className="ml-auto",
+                            size="lg"
                         ),
                     ],
                     width=1,
@@ -277,13 +284,33 @@ app.layout = dbc.Container(
                     [
                         dbc.Button("New experiment", 
                                    id="new-experiment", 
+                                   outline=False,
+                                   color="primary", 
+                                   className="me-1"),
+                    ]
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button("Start experiment", 
+                                   id="start-experiment", 
                                    outline=True,
                                    disabled=True, 
                                    color="primary", 
                                    className="me-1"),
                     ]
+                ),
+                dbc.Col(
+                    [
+                        dbc.Button("Stop experiment", 
+                                   id="stop-experiment", 
+                                   outline=False,
+                                   disabled=False, 
+                                   color="primary", 
+                                   className="me-1"),
+                    ]
                 )
-            ]
+            ],
+            align="center"
         ),
         # Live plot settings
         html.Hr(),
@@ -425,6 +452,31 @@ def new_experiment(n_clicks, hostname):
 
 
 @app.callback(
+    [
+        Output("stop-experiment", "disabled"), 
+        Output("start-experiment", "disabled"),
+        Output("start-experiment", "outline"),
+        Output("stop-experiment", "outline"),
+    ],
+    [
+        Input("start-experiment", "n_clicks"),
+        Input("stop-experiment", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def start_stop_experiment(start, stop):
+    button_id = ctx.triggered_id if not None else ''
+    
+    if button_id == "start-experiment":
+        subprocess.run(f"tmuxinator start -p ~/OrangeBox/sensors.yaml {os.getenv('RUN_MODE', '')}", shell=True)        
+        return False, True, True, False
+    elif button_id == "stop-experiment":
+        subprocess.run("tmux send-keys -t sensors C-c", shell=True)
+        subprocess.run("tmux kill-session -t sensors", shell=True)
+        return True, False, False, True
+    
+
+@app.callback(
     Output("dummy-div-other", "children", allow_duplicate=True),
     Input("orange_box-freq", "value"),
     prevent_initial_call=True,
@@ -478,11 +530,15 @@ def confirm_reboot(submit_n_clicks):
 
 @app.callback(
     Output("settings-collapse", "is_open"),
-    [Input("settings-button", "n_clicks")],
-    [State("settings-collapse", "is_open")],
+    Output("settings-button", "color"),
+    Input("settings-button", "n_clicks"),
+    State("settings-collapse", "is_open"),
 )
 def toggle_collapse(n, is_open):
-    return not is_open if n else is_open
+    if n is None:
+        raise dash.exceptions.PreventUpdate
+    
+    return not is_open, 'primary' if is_open else 'secondary'
 
 
 # Periodic callbacks
