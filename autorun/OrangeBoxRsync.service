@@ -1,0 +1,8 @@
+[Unit]
+Description=Rsync Upload Service
+
+[Service]
+Type=simple
+User=rock
+Group=rock
+ExecStart=/bin/bash -c 'rsync -avz -e "ssh -i /home/rock/.ssh/id_ed25519_rsync" --exclude=Power /home/rock/measurements/ rafa@watchplant.fer.hr:'
