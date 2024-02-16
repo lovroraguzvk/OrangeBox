@@ -5,4 +5,4 @@ Description=Rsync Upload Service
 Type=simple
 User=rock
 Group=rock
-ExecStart=/bin/bash -c 'rsync -avz -e "ssh -i /home/rock/.ssh/id_ed25519_rsync -o StrictHostKeyChecking=no" --exclude=Power /home/rock/measurements/ rafa@watchplant.fer.hr:'
+ExecStart=/bin/bash -c 'rsync -avz -e "ssh -i /home/rock/.ssh/id_ed25519_rsync -o StrictHostKeyChecking=no" /home/rock/measurements/ rafa@watchplant.fer.hr:'
