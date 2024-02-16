@@ -14,6 +14,8 @@ from plotly.subplots import make_subplots
 import utils
 
 # Constants
+DATA_FIELDS_FILE = (pathlib.Path.home() /
+                    "OrangeBox/drivers/mu_interface/mu_interface/Utilities/config/default_data_fields.yaml")
 WIFI_FILE = pathlib.Path.home() / "OrangeBox/config/orange_box.config"
 EXP_NUMBER_FILE = pathlib.Path.home() / "OrangeBox/status/experiment_number.txt"
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
@@ -212,6 +214,71 @@ powerPane = dbc.Col(
     width=8,
 )
 
+experimentPane = dbc.Row(
+    [
+        dbc.Col(
+            [html.Label("Experiment number:")],
+            width='auto',
+        ),
+        dbc.Col(
+            [
+                html.Label(id="experiment-number", children=""),
+            ],
+            width=1,
+        ),
+        dbc.Col(
+            [
+                dbc.Button("New experiment", 
+                            id="new-experiment", 
+                            outline=False,
+                            color="primary", 
+                            className="me-1"),
+            ]
+        ),
+        dbc.Col(
+            [
+                dbc.Button("Start experiment", 
+                            id="start-experiment", 
+                            outline=True,
+                            disabled=True, 
+                            color="primary", 
+                            className="me-1"),
+            ]
+        ),
+        dbc.Col(
+            [
+                dbc.Button("Stop experiment", 
+                            id="stop-experiment", 
+                            outline=False,
+                            disabled=False, 
+                            color="primary", 
+                            className="me-1"),
+            ]
+        ),
+        dbc.Col(
+            [
+                dbc.Button("Configure sensors", 
+                            id="configure-experiment", 
+                            outline=False,
+                            disabled=False, 
+                            color="primary", 
+                            className="me-1"),
+            ]
+        ),
+        dbc.Modal([
+            dbc.ModalHeader("Select which values will be measured and stored."),
+            dbc.ModalBody([
+                # Display labels and toggle switches from file
+                dbc.Checklist(id="data-fields-checklist", switch=True),
+            ]),
+            dbc.ModalFooter([
+                dbc.Button("Save", id="data-fields-save", color="primary"),
+                dbc.Button("Close", id="data-fields-close", color="secondary"),
+            ]),
+        ], id="data-fields-modal", size="lg"),
+    ],
+    align="center"
+)
 
 # Set up the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
@@ -268,50 +335,7 @@ app.layout = dbc.Container(
                     [html.H3("Experiment Information")], width=True)
             ],
         ),
-        dbc.Row(
-            [
-                dbc.Col(
-                    [html.Label("Experiment number:")],
-                    width='auto',
-                ),
-                dbc.Col(
-                    [
-                        html.Label(id="experiment-number", children=""),
-                    ],
-                    width=1,
-                ),
-                dbc.Col(
-                    [
-                        dbc.Button("New experiment", 
-                                   id="new-experiment", 
-                                   outline=False,
-                                   color="primary", 
-                                   className="me-1"),
-                    ]
-                ),
-                dbc.Col(
-                    [
-                        dbc.Button("Start experiment", 
-                                   id="start-experiment", 
-                                   outline=True,
-                                   disabled=True, 
-                                   color="primary", 
-                                   className="me-1"),
-                    ]
-                ),
-                dbc.Col(
-                    [
-                        dbc.Button("Stop experiment", 
-                                   id="stop-experiment", 
-                                   outline=False,
-                                   disabled=False, 
-                                   color="primary", 
-                                   className="me-1"),
-                    ]
-                )
-            ],
-            align="center"
-        ),
+        experimentPane,
         # Live plot settings
         html.Hr(),
         dbc.Row(
@@ -437,7 +461,8 @@ def write_settingsPane(n_clicks, wifi_name, wifi_password):
 
 
 @app.callback(
-    [Output("experiment-number", "children"), Output("data-path-store", "data")],
+    Output("experiment-number", "children"), 
+    Output("data-path-store", "data"),
     Input("new-experiment", "n_clicks"),
     Input("orange_box-hostname", "children"),
 )
@@ -510,7 +535,7 @@ def reboot_button(n_clicks):
 #################
 @app.callback(
     Output("orange_box-shutdown", "color"),
-    [Input("confirm_shutdown", "submit_n_clicks")],
+    Input("confirm_shutdown", "submit_n_clicks"),
 )
 def confirm_shutdown(submit_n_clicks):
     if submit_n_clicks:
@@ -520,7 +545,7 @@ def confirm_shutdown(submit_n_clicks):
 
 @app.callback(
     Output("orange_box-reboot", "color"),
-    [Input("confirm_reboot", "submit_n_clicks")],
+    Input("confirm_reboot", "submit_n_clicks"),
 )
 def confirm_reboot(submit_n_clicks):
     if submit_n_clicks:
@@ -540,28 +565,71 @@ def toggle_collapse(n, is_open):
     
     return not is_open, 'primary' if is_open else 'secondary'
 
+@app.callback(
+    Output("data-fields-checklist", "options"),
+    Output("data-fields-checklist", "value"),
+    Input("configure-experiment", "n_clicks")
+)
+def update_checklist_options(n_clicks):
+    config = utils.read_data_fields_from_file(DATA_FIELDS_FILE)
+    options = [{'label': label, 'value': label} for label in config]
+    value = [label for label, value in config.items() if value]
+    return options, value
+
+@app.callback(
+    Output("data-fields-modal", "is_open", allow_duplicate=True),
+    Input("configure-experiment", "n_clicks"),
+    Input("data-fields-close", "n_clicks"),
+    State("data-fields-modal", "is_open"),
+    prevent_initial_call=True,
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
+
+# Callback to save the current configuration to the file
+@app.callback(
+    Output("data-fields-modal", "is_open", allow_duplicate=True),
+    Input("data-fields-save", "n_clicks"),
+    State("data-fields-checklist", "value"),
+    prevent_initial_call=True,
+)
+def save_configuration(n_clicks, current_values):
+    current_values = set(current_values)
+    old_config = utils.read_data_fields_from_file(DATA_FIELDS_FILE)
+    for key in old_config:
+        old_config[key] = key in current_values
+        
+    utils.save_date_fields_to_file(old_config, DATA_FIELDS_FILE)
+    return False
+
 
 # Periodic callbacks
 ####################
 @app.callback(
     Output("sensor-select", "options"),
-    [Input("interval-component", "n_intervals"), Input("data-path-store", "data")]
+    Input("interval-component", "n_intervals"),
+    Input("data-path-store", "data")
 )
 def update_storages(n, data_path):
     experiment_path = pathlib.Path(data_path)
-    nodes = [node.name for node_type in experiment_path.iterdir() for node in node_type.iterdir()]
+    try:
+        nodes = [node.name for node_type in experiment_path.iterdir() for node in node_type.iterdir()]
+    except FileNotFoundError:
+        return []
     
     return [{"label": entry, "value": entry} for entry in sorted(nodes)]
 
 
 @app.callback(
-    [Output("mu_plot", "figure"), Output("energy_plot", "figure")],
-    [
-        Input("interval-component", "n_intervals"),
-        Input("sensor-select", "value"),
-        Input("time-select", "value"),
-        Input("data-path-store", "data"),
-    ]
+    Output("mu_plot", "figure"),
+    Output("energy_plot", "figure"),
+    Input("interval-component", "n_intervals"),
+    Input("sensor-select", "value"),
+    Input("time-select", "value"),
+    Input("data-path-store", "data")
+    
 )
 def update_plots(n, sensor_select, time_select, data_path):
     fig_data = {}
