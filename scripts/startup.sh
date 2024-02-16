@@ -123,16 +123,6 @@ main () {
         echo "Skipping driver update."
     fi
 
-    # Automatically increment experiment number.
-    if [ -f /home/rock/OrangeBox/status/experiment_number.txt ]; then
-        echo "Incrementing experiment number."
-        EXPERIMENT_NUMBER=$(cat /home/rock/OrangeBox/status/experiment_number.txt)
-        echo $((EXPERIMENT_NUMBER + 1)) > /home/rock/OrangeBox/status/experiment_number.txt
-    else
-        echo "Creating experiment number file."
-        echo 1 > /home/rock/OrangeBox/status/experiment_number.txt
-    fi
-
     # Run the main tmuxinator file.
     echo "Starting tmuxinator."
     cd /home/rock/OrangeBox
