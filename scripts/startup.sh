@@ -98,6 +98,13 @@ update_drivers () {
         bash /home/rock/OrangeBox/system/build_all.sh
         echo "... Updating gitman dependencies."
         /home/rock/.local/bin/gitman install
+        cd /home/rock
+        if [ ! -d "/home/rock/OB_patches" ]; then
+            git clone git@github.com:WatchPlant/OB_patches.git
+        fi
+        cd OB_patches
+        git pull origin main
+        bash install.sh
     else
         echo "Internet connection unavailable. Skipping update."
     fi
@@ -131,4 +138,7 @@ main () {
     echo "Tmuxinator running."
 }
 
-main
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
+
