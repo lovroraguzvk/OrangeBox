@@ -54,10 +54,19 @@ connect_to_wifi () {
     local DEFAULT_FILE="/home/rock/OrangeBox/config/default.config"
     local STATUS_DIR="/home/rock/OrangeBox/status/"
     local WIFI_FILE="$STATUS_DIR/wifi_connect_success.txt"
+
+    # Perform checks.
     if [ ! -d "$STATUS_DIR" ]; then
         mkdir -p "$STATUS_DIR"
     fi
+    if [ ! -f "$STATUS_DIR/experiment_number.txt" ]; then
+        echo 1 > "$STATUS_DIR/experiment_number.txt"
+    fi
+    if [ ! -f "$CONFIG_FILE" ]; then
+        cp "$DEFAULT_FILE" "$CONFIG_FILE"
+    fi
 
+    # Connect to wifi
     if [ ! -f "$WIFI_FILE" ]; then
         sleep 120
         if [ ! -f "$CONFIG_FILE" ]; then
