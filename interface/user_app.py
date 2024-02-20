@@ -457,12 +457,12 @@ def new_experiment(n_clicks, hostname):
 
 
 @app.callback(
-        Output("stop-experiment", "disabled"),
-        Output("start-experiment", "disabled"),
-        Output("start-experiment", "outline"),
-        Output("stop-experiment", "outline"),
-        Input("start-experiment", "n_clicks"),
-        Input("stop-experiment", "n_clicks"),
+    Output("stop-experiment", "disabled"),
+    Output("start-experiment", "disabled"),
+    Output("start-experiment", "outline"),
+    Output("stop-experiment", "outline"),
+    Input("start-experiment", "n_clicks"),
+    Input("stop-experiment", "n_clicks"),
     prevent_initial_call=True,
 )
 def start_stop_experiment(start, stop):
@@ -622,6 +622,8 @@ def update_plots(n, sensor_select, time_select, data_path):
             "humidity_external",
             "differential_potential_ch1",
             "differential_potential_ch2",
+            "RMS_CH1",
+            "RMS_CH2",
             "transpiration",
         ]
     elif sensor_select.startswith("PN"):
