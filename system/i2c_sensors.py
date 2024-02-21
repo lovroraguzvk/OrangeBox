@@ -1,6 +1,9 @@
 import argparse
+import pathlib
 import socket
+import subprocess
 import time
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 
@@ -9,10 +12,10 @@ import busio
 import numpy as np
 from adafruit_ina219 import INA219, ADCResolution, BusVoltageRange
 from adafruit_shtc3 import SHTC3
-
 from mu_interface.Utilities.data2csv import data2csv
 from mu_interface.Utilities.utils import TimeFormat
-from system.telegram_bot.telegram_bot import broadcast_message
+
+from telegram_bot.telegram_bot import broadcast_message as telegram_broadcast_message
 
 ## Parse arguments.
 parser = argparse.ArgumentParser(description="Arguments for the sensor node.")
@@ -66,6 +69,13 @@ csv_object = data2csv(file_path, file_name, "energy")
 csv_object.fix_ownership()
 last_time = datetime.now()
 
+# Battery monitoring
+batt_history = deque(maxlen=10)
+batt_status = "OK"
+BATT_RECOVER = 3.8
+BATT_LOW = 3.7
+BATT_CRIT = 3.5
+
 ## Measure and display loop
 while True:
     # Read data from sensor.
@@ -73,9 +83,17 @@ while True:
     current_solar = round(ina219_solar.current, 1)                # current in mA
     bus_voltage_battery = round(ina219_battery.bus_voltage, 2)    # voltage on V- (load side)
     current_battery = round(ina219_battery.current, 1)            # current in mA
+    
+    batt_history.append(bus_voltage_battery)
 
-    if bus_voltage_battery < 3.2:
-        broadcast_message("Battery Voltage Is Low. Shutting Down!")
+    if all(val < BATT_CRIT for val in batt_history):
+        telegram_broadcast_message("Battery Voltage Is Critically Low. Shutting Down!")
+        subprocess.run(pathlib.Path.home() / "OrangeBox/scripts/shutdown.sh", shell=True)
+    if batt_status == "OK" and all(val < BATT_LOW for val in batt_history):
+        telegram_broadcast_message("Battery Voltage Is Low.")
+        batt_status = "LOW"
+    elif batt_status == "LOW" and all(val > BATT_RECOVER for val in batt_history):
+        batt_status = "OK"
 
     temperature = 0
     humidity = 0

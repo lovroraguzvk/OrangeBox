@@ -20,6 +20,7 @@ DATA_FIELDS_FILE = (
 WIFI_FILE = pathlib.Path.home() / "OrangeBox/config/orange_box.config"
 EXP_NUMBER_FILE = pathlib.Path.home() / "OrangeBox/status/experiment_number.txt"
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
+FIGURE_SAVE_PATH = pathlib.Path.home() / "OrangeBox/status"
 ENERGY_PATH = MEASUREMENT_PATH / "Power"
 DEFAULT_PLOT_WINDOW = 2
 
@@ -737,13 +738,14 @@ def update_plots(n, sensor_select, time_select, data_path):
         pass
 
     if fig_data:
-        fig_data["layout"]["uirevision"] = "1"
+        # Prevent the plot from changing user interaction settings (zoom, pan, etc.)
+        # Not well documented. Probably any value will work as long as it's constant.
+        fig_data["layout"]["uirevision"] = "constant"
     if fig_power:
-        fig_power["layout"]["uirevision"] = "3"
+        fig_power["layout"]["uirevision"] = "constant"
+        fig_power.write_image(FIGURE_SAVE_PATH / 'power_plot.png')
 
     # Save images
-    fig_power.write_image('proba_pow.png')
-    fig_data.write_image('proba_data.png')
     
     # Return the updated figures
     return fig_data, fig_power
