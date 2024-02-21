@@ -1,5 +1,12 @@
 import socket
 
+try:
+    import ruamel.yaml
+    yaml = ruamel.yaml.YAML()
+    yaml.preserve_quotes = True
+    yaml.top_level_colon_align = 19
+except ImportError:
+    import yaml
 
 def get_ip_address():
     try:
@@ -45,3 +52,15 @@ def update_experiment_number(file_path, skip_update=False):
             f.write(str(experiment_number))
 
     return experiment_number
+
+def read_data_fields_from_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            config = yaml.load(file)
+        return config if config else {}
+    except FileNotFoundError:
+        raise FileNotFoundError("File not found", file_path)
+
+def save_date_fields_to_file(config, file_path):
+    with open(file_path, 'w') as file:
+        yaml.dump(config, file)

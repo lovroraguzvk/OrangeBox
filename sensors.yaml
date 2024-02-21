@@ -1,4 +1,4 @@
-name: orange_box_main
+name: sensors
 root: ~/OrangeBox
 
 # Optional tmux socket
@@ -59,21 +59,6 @@ windows:
             - CYB4: 
                 - cd drivers/mu_interface/mu_interface/Sensor
                 - python3 main.py --port /dev/CYB4 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
-    - Interface:
-        layout: 'even-vertical'
-        panes:
-            - Power:
-                - cd system
-                - sudo -E python3 i2c_sensors.py --addr $SINK --dir $MEAS_DIR/Power
-            - Settings:
-                - cd interface
-                - python3 user_app.py
-    - Bot:
-        layout: 'even-vertical'
-        panes:
-            - Bot:
-                - cd system/telegram_bot/telegram_bot
-                - python3 telegram_bot.py
     <%- if args[0] == "all" %>
     - BLE:
         - cd drivers/BLE_Sink

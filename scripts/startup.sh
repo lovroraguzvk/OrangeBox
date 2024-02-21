@@ -51,21 +51,36 @@ set_leds () {
 
 connect_to_wifi () {
     local CONFIG_FILE="/home/rock/OrangeBox/config/orange_box.config"
+    local DEFAULT_FILE="/home/rock/OrangeBox/config/default.config"
     local STATUS_DIR="/home/rock/OrangeBox/status/"
     local WIFI_FILE="$STATUS_DIR/wifi_connect_success.txt"
+
+    # Perform checks.
     if [ ! -d "$STATUS_DIR" ]; then
         mkdir -p "$STATUS_DIR"
     fi
+    if [ ! -f "$STATUS_DIR/experiment_number.txt" ]; then
+        echo 1 > "$STATUS_DIR/experiment_number.txt"
+    fi
+    if [ ! -f "$CONFIG_FILE" ]; then
+        cp "$DEFAULT_FILE" "$CONFIG_FILE"
+    fi
 
+    # Connect to wifi
     if [ ! -f "$WIFI_FILE" ]; then
         sleep 120
         if [ ! -f "$CONFIG_FILE" ]; then
             copy_config_from_usb "$CONFIG_FILE"
         fi
         source "$CONFIG_FILE"
-        sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS" && \
-        echo success > "$WIFI_FILE" && \
-        echo "Successfully created WIFI connection."
+        if sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS"; then
+            echo success > "$WIFI_FILE"
+            echo "Successfully created WIFI connection."
+        else
+            source "$DEFAULT_FILE"
+            sudo nmcli -w 180 dev wifi connect "$SSID" password "$PASS" && \
+            echo "Failed to create WIFI connection. Connected to default network instead."
+        fi
     else
         sleep 30
         echo "WIFI connection was already created."
@@ -92,6 +107,13 @@ update_drivers () {
         bash /home/rock/OrangeBox/system/build_all.sh
         echo "... Updating gitman dependencies."
         /home/rock/.local/bin/gitman install
+        cd /home/rock
+        if [ ! -d "/home/rock/OB_patches" ]; then
+            git clone git@github.com:WatchPlant/OB_patches.git
+        fi
+        cd OB_patches
+        git pull origin main
+        bash install.sh
     else
         echo "Internet connection unavailable. Skipping update."
     fi
@@ -120,8 +142,12 @@ main () {
     # Run the main tmuxinator file.
     echo "Starting tmuxinator."
     cd /home/rock/OrangeBox
-    tmuxinator start -p main.yaml "$RUN_MODE"
+    tmuxinator start -p system.yaml
+    tmuxinator start -p sensors.yaml "$RUN_MODE"
     echo "Tmuxinator running."
 }
 
-main
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
+
