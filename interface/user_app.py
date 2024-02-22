@@ -1,6 +1,7 @@
 import os
 import pathlib
 import subprocess
+import time
 
 import dash
 import dash_bootstrap_components as dbc
@@ -474,6 +475,7 @@ def start_stop_experiment(start, stop):
         return False, True, True, False
     elif button_id == "stop-experiment":
         subprocess.run("tmux send-keys -t sensors C-c", shell=True)
+        time.sleep(2)
         subprocess.run("tmux kill-session -t sensors", shell=True)
         return True, False, False, True
 

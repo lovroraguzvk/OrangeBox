@@ -21,10 +21,15 @@ bot = telebot.TeleBot(bot_token)
 # but only one bot can receive messages from users.
 # https://github.com/eternnoir/pyTelegramBotAPI/issues/1253#issuecomment-894232944
 def broadcast_message(message):
-    with open(subscribers_file, "r") as file:
-        for id in file.readlines():
-            bot.send_message(id, message)
-            print(f"Broadcast sent: {message}")
+    try:
+        with open(subscribers_file, "r") as file:
+            subscribers = [line.strip() for line in file.readlines()]
+    except FileNotFoundError:
+        subscribers = []
+
+    for id in subscribers:
+        bot.send_message(id, message)
+        print(f"Broadcast sent: {message}")
 
 welcome_message = """
     Welcome to the Telegram Bot!
