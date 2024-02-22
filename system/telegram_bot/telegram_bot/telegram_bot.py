@@ -1,13 +1,20 @@
 import os
 import pathlib
 import shutil
+import socket
 import sys
 from time import sleep
 
 import telebot
+import yaml
 
-subscribers_file = pathlib.Path(__file__).parent / "IDs.txt"
-bot_token = os.getenv("BOT_TOKEN")
+subscribers_file = pathlib.Path(__file__).parent / "subscribers.txt"
+tokens_file = pathlib.Path(__file__).parent / "tokens.yaml"
+
+with open(tokens_file, "r") as file:
+    all_tokens = yaml.safe_load(file)
+    bot_token = all_tokens[socket.gethostname()]
+
 bot = telebot.TeleBot(bot_token)
 
 # You can import the bot from anywhere and use it to send messages,
@@ -17,7 +24,7 @@ def broadcast_message(message):
     with open(subscribers_file, "r") as file:
         for id in file.readlines():
             bot.send_message(id, message)
-            print("Message sent")
+            print(f"Broadcast sent: {message}")
 
 welcome_message = """
     Welcome to the Telegram Bot!
@@ -30,7 +37,7 @@ welcome_message = """
     /unsubscribe - Unsubscribe from update messages.
 """
 
-# Handlers receiving messages. 
+# Handlers receiving messages.
 @bot.message_handler(commands=["start"])
 def handle_start(message):
     help_message = "Feel free to explore the bot's functionalities! If you have any questions, use the /help command."
@@ -49,7 +56,7 @@ def handle_add_id(message):
             existing_ids = [line.strip() for line in file.readlines()]
     except FileNotFoundError:
         existing_ids = []
-        
+
     with open(subscribers_file, "a") as file:
         id = message.chat.id
         if str(id) not in existing_ids:
@@ -61,7 +68,7 @@ def handle_add_id(message):
             print(f"Already subscribed: {id}")
 
 
-@bot.message_handler(commands=["unsubscribe"])  # unsubs
+@bot.message_handler(commands=["unsubscribe"])
 def handle_remove_id(message):
     try:
         with open(subscribers_file, "r") as file:
@@ -92,14 +99,15 @@ def handle_file(message):
         print(f"Error: {e}")
 
 
-@bot.message_handler(commands=["power_plot"])  # odvojiti plot_meas i plot_sens
+@bot.message_handler(commands=["power_plot"])
 def send_plot(message):
-    try:
-        with open(pathlib.Path.home() / "OrangeBox/status/power_plot.png", "rb") as image:
-            bot.send_photo(message.chat.id, image)
+    # try:
+    #     with open(pathlib.Path.home() / "OrangeBox/status/power_plot.png", "rb") as image:
+    #         bot.send_photo(message.chat.id, image)
 
-    except FileNotFoundError:
-        bot.reply_to(message, "Power Plot Currently Unavailable.")
+    # except FileNotFoundError:
+    #     bot.reply_to(message, "Power Plot Currently Unavailable.")
+    bot.reply_to(message, "Sorry, this feature is currently unavailable.")
 
 
 if __name__ == "__main__":
@@ -107,6 +115,7 @@ if __name__ == "__main__":
         sleep(1)
         try:
             print("Starting bot...")
+            broadcast_message("Hello! I'm up and running :)")
             bot.polling(non_stop=True)
         except KeyboardInterrupt:
             sys.exit()

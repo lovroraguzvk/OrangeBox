@@ -83,7 +83,7 @@ while True:
     current_solar = round(ina219_solar.current, 1)                # current in mA
     bus_voltage_battery = round(ina219_battery.bus_voltage, 2)    # voltage on V- (load side)
     current_battery = round(ina219_battery.current, 1)            # current in mA
-    
+
     batt_history.append(bus_voltage_battery)
 
     if all(val < BATT_CRIT for val in batt_history):
