@@ -116,11 +116,14 @@ def send_plot(message):
 
 
 if __name__ == "__main__":
+    first_pass = True
     while True:
         sleep(1)
         try:
-            print("Starting bot...")
-            broadcast_message("Hello! I'm up and running :)")
+            print("(re)Starting bot...")
+            if first_pass:
+                broadcast_message("Hello! I'm up and running :)")
+                first_pass = False
             bot.polling(non_stop=True)
         except KeyboardInterrupt:
             sys.exit()
