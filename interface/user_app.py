@@ -743,10 +743,7 @@ def update_plots(n, sensor_select, time_select, data_path):
         fig_data["layout"]["uirevision"] = "constant"
     if fig_power:
         fig_power["layout"]["uirevision"] = "constant"
-        fig_power.write_image(FIGURE_SAVE_PATH / 'power_plot.png')
 
-    # Save images
-    
     # Return the updated figures
     return fig_data, fig_power
 
