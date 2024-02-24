@@ -636,7 +636,7 @@ def update_plots(n, sensor_select, time_select, data_path):
             "temp_external_2",
             "temp_leaf_1",
             "temp_leaf_2",
-        ],
+        ]
     elif sensor_select.startswith("Z"):
         sensor_type = "Zigbee"
         data_fields = [
