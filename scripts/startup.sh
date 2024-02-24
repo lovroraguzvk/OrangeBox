@@ -122,6 +122,10 @@ update_drivers () {
 main () {
     echo 1 > /tmp/led_state
 
+    if [ -f ~/extra_config.sh ]; then
+        . ~/extra_config.sh
+    fi
+
     # Set working directory.
     cd /home/rock/OrangeBox
 
