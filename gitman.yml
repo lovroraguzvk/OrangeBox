@@ -39,7 +39,7 @@ groups:
 sources_locked:
   - repo: git@github.com:WatchPlant/mu_interface.git
     name: mu_interface
-    rev: 82b99db88e2bc8430a3be7d374a7c02f27546bc8
+    rev: 713f3f6e765c969d84b4f9a9879e7d065c856210
     type: git
     params:
     sparse_paths:

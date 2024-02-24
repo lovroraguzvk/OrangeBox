@@ -15,8 +15,11 @@ from plotly.subplots import make_subplots
 import utils
 
 # Constants
-DATA_FIELDS_FILE = (
+DEFAULT_DATA_FIELDS_FILE = (
     pathlib.Path.home() / "OrangeBox/drivers/mu_interface/mu_interface/Utilities/config/default_data_fields.yaml"
+)
+CUSTOM_DATA_FIELDS_FILE = (
+    pathlib.Path.home() / "OrangeBox/drivers/mu_interface/mu_interface/Utilities/config/custom_data_fields.yaml"
 )
 WIFI_FILE = pathlib.Path.home() / "OrangeBox/config/orange_box.config"
 EXP_NUMBER_FILE = pathlib.Path.home() / "OrangeBox/status/experiment_number.txt"
@@ -552,7 +555,8 @@ def toggle_collapse(n, is_open):
     Input("configure-experiment", "n_clicks"),
 )
 def update_checklist_options(n_clicks):
-    config = utils.read_data_fields_from_file(DATA_FIELDS_FILE)
+    config_file = CUSTOM_DATA_FIELDS_FILE if CUSTOM_DATA_FIELDS_FILE.exists() else DEFAULT_DATA_FIELDS_FILE
+    config = utils.read_data_fields_from_file(config_file)
     options = [{"label": label, "value": label} for label in config]
     value = [label for label, value in config.items() if value]
     return options, value
@@ -580,11 +584,12 @@ def toggle_modal(n1, n2, is_open):
 )
 def save_configuration(n_clicks, current_values):
     current_values = set(current_values)
-    old_config = utils.read_data_fields_from_file(DATA_FIELDS_FILE)
+    config_file = CUSTOM_DATA_FIELDS_FILE if CUSTOM_DATA_FIELDS_FILE.exists() else DEFAULT_DATA_FIELDS_FILE
+    old_config = utils.read_data_fields_from_file(config_file)
     for key in old_config:
         old_config[key] = key in current_values
 
-    utils.save_date_fields_to_file(old_config, DATA_FIELDS_FILE)
+    utils.save_date_fields_to_file(old_config, CUSTOM_DATA_FIELDS_FILE)
     return False
 
 
