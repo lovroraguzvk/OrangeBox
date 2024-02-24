@@ -636,12 +636,7 @@ def update_plots(n, sensor_select, time_select, data_path):
         ]
     elif sensor_select.startswith("PN"):
         sensor_type = "BLE"
-        data_fields = [
-            "temp_external_1",
-            "temp_external_2",
-            "temp_leaf_1",
-            "temp_leaf_2",
-        ]
+        data_fields = "all"
     elif sensor_select.startswith("Z"):
         sensor_type = "Zigbee"
         data_fields = [
@@ -664,6 +659,10 @@ def update_plots(n, sensor_select, time_select, data_path):
             df = pd.read_csv(data_dir / file_names[-1])
             df["datetime"] = pd.to_datetime(df["datetime"], format="%Y-%m-%d %H:%M:%S:%f")  # convert to datetime object
             df_window = df.loc[df["datetime"] > pd.Timestamp.now() - pd.Timedelta(hours=time_select)]
+
+            if data_fields == "all":
+                data_fields = df.columns.to_list()
+                data_fields.remove("datetime")
 
             fig_data = px.line(
                 df_window,
