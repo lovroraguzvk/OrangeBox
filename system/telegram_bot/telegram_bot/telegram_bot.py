@@ -1,3 +1,4 @@
+from operator import ge
 import os
 import pathlib
 import shutil
@@ -8,12 +9,29 @@ from time import sleep
 import telebot
 import yaml
 
+
+def get_ip_address():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
+
+
+def get_hostname():
+    try:
+        return socket.gethostname()
+    except OSError:
+        return "Unknown"
+
+
 subscribers_file = pathlib.Path(__file__).parent / "subscribers.txt"
 tokens_file = pathlib.Path(__file__).parent / "tokens.yaml"
 
 with open(tokens_file, "r") as file:
     all_tokens = yaml.safe_load(file)
-    bot_token = all_tokens[socket.gethostname()]
+    bot_token = all_tokens[get_hostname()]
 
 bot = telebot.TeleBot(bot_token)
 
@@ -122,7 +140,7 @@ if __name__ == "__main__":
         try:
             print("(re)Starting bot...")
             if first_pass:
-                broadcast_message("Hello! I'm up and running :)")
+                broadcast_message(f"Hello! I'm up and running :)\nMy IP address is: {get_ip_address()}")
                 first_pass = False
             bot.polling(non_stop=True)
         except KeyboardInterrupt:
