@@ -50,7 +50,7 @@ sources_locked:
       - pip3 install -e .
   - repo: git@github.com:WatchPlant/BLE_Sink.git
     name: BLE_Sink
-    rev: 25b2efd61f5f5be272a77c7e5bb03ae255a9d21c
+    rev: 3c4ef088d92b9c8c10a4c3b7327d8675975facfd
     type: git
     params:
     sparse_paths:
@@ -61,7 +61,7 @@ sources_locked:
       -
   - repo: git@github.com:WatchPlant/Zigbee_Sink.git
     name: Zigbee_Sink
-    rev: 7378b8d11701f4bfa51442968bf3b0bac5b9a5d0
+    rev: cf2118be8e7e1b607e5c4a38a0fe7d7c22854cd0
     type: git
     params:
     sparse_paths:
