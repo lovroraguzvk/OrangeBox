@@ -9,7 +9,6 @@ from pathlib import Path
 
 import board
 import busio
-import numpy as np
 from adafruit_ina219 import INA219, ADCResolution, BusVoltageRange
 from adafruit_shtc3 import SHTC3
 from mu_interface.Utilities.data2csv import data2csv
@@ -106,17 +105,15 @@ while True:
             print(f"Error reading temperature and humidity: {e}")
 
     # Publish data over ZMQ.
-    payload = np.array(
-        [
-            int(datetime.now().timestamp()),
-            bus_voltage_solar,
-            current_solar,
-            bus_voltage_battery,
-            current_battery,
-            temperature,
-            humidity,
-        ]
-    )
+    payload = [
+        int(datetime.now().timestamp()),
+        bus_voltage_solar,
+        current_solar,
+        bus_voltage_battery,
+        current_battery,
+        temperature,
+        humidity,
+    ]
 
     # Create a new csv file after the specified interval.
     current_time = datetime.now()
@@ -128,8 +125,7 @@ while True:
         last_time = current_time
 
     # Store data to csv file locally.
-    data = payload.tolist()
-    csv_object.write2csv(data)
+    csv_object.write2csv(payload)
 
     # TODO: add some statistics to print out
 
