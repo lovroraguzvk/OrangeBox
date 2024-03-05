@@ -7,5 +7,6 @@ mv ~/.config/ranger ~/.config/ranger.backup
 cp .tmux.conf ~/
 cp .nanorc ~/
 cp .bash_aliases ~/
+cp .gitconfig ~/
 cp -R ranger ~/.config/
 cp -R htop ~/.config/
