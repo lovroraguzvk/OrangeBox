@@ -38,6 +38,8 @@ set_leds () {
         exit 1
     fi
 
+    echo $LED_SETTING > /tmp/led_state
+
     # Show success: green led flashing, blue led off
     if [[ $LED_SETTING -eq 3 ]]; then
         sudo sh -c "echo 0 > /sys/class/leds/rockpis\:blue\:user/brightness"
@@ -94,7 +96,6 @@ connect_to_wifi () {
     fi
 
     set_leds "$LED_SETTING"
-    echo $LED_SETTING > /tmp/led_state
 }
 
 update_drivers () {
@@ -120,7 +121,7 @@ update_drivers () {
 }
 
 main () {
-    echo 1 > /tmp/led_state
+    set_leds 1
 
     if [ -f ~/extra_config.sh ]; then
         . ~/extra_config.sh
@@ -149,6 +150,14 @@ main () {
     tmuxinator start -p system.yaml
     tmuxinator start -p sensors.yaml "$RUN_MODE"
     echo "Tmuxinator running."
+
+    check_internet
+    if [ $? -eq 0 ]; then
+        LED_SETTING=5
+    else
+        LED_SETTING=4
+    fi
+    set_leds "$LED_SETTING"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

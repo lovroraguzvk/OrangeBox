@@ -13,8 +13,10 @@ ledTable  T[] =
 { 
   { GPIO_PIN, 0, 0, {{MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}, {MB_HIGH, 500, 0}}, 0},	// POWER ON
   { GPIO_PIN, 0, 0, {{MB_HIGH, 500, 0}, {MB_LOW, 500, 0}, {MB_HIGH, 500, 0}, {MB_LOW, 500, 0}}, 0},		// KERNEL LOADED
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 0, 0}, {MB_LOW, 1700, 0}}, 0 },		// OFFLINE OPERATION
-  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 1, 0}, {MB_LOW, 1400, 0}}, 0 },		// ONLINE OPERATION
+  { GPIO_PIN, 0, 0, {{MB_LOW, 200, 0}, {MB_HIGH, 100, 0}, {MB_LOOP, 0, 0}, {MB_HIGH, 1700, 0}}, 0 },	// LOADING-OFFLINE
+  { GPIO_PIN, 0, 0, {{MB_LOW, 200, 0}, {MB_HIGH, 100, 0}, {MB_LOOP, 1, 0}, {MB_HIGH, 1400, 0}}, 0 },	// LOADING-ONLINE
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 0, 0}, {MB_LOW, 1700, 0}}, 0 },		// READY-OFFLINE OPERATION
+  { GPIO_PIN, 0, 0, {{MB_HIGH, 100, 0}, {MB_LOW, 200, 0}, {MB_LOOP, 1, 0}, {MB_LOW, 1400, 0}}, 0 },		// READY-ONLINE OPERATION
   { GPIO_PIN, 0, 0, {{MB_HIGH, 200, 0}, {MB_LOW, 200, 0}, {MB_HIGH, 200, 0}, {MB_LOW, 200, 0}}, 0},		// ERROR
 };
 const int NUM_STEPS = 4;  // Number steps of LED blinking loop
@@ -125,7 +127,7 @@ void readFIFOPipe() {
 				throw std::out_of_range("Value out of range");
 			}
 			STATE = newState;
-			std::cout << "STATE updated to: " << STATE << std::endl;
+			// std::cout << "STATE updated to: " << STATE << std::endl;
 		} catch (const std::invalid_argument& e) {
 			std::cerr << "Invalid data received from FIFO pipe: " << line << std::endl;
 		} catch (const std::out_of_range& e) {
