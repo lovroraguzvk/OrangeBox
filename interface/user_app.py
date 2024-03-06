@@ -24,6 +24,8 @@ CUSTOM_DATA_FIELDS_FILE = (
 WIFI_FILE = pathlib.Path.home() / "OrangeBox/config/orange_box.config"
 EXP_NUMBER_FILE = pathlib.Path.home() / "OrangeBox/status/experiment_number.txt"
 MEASUREMENT_PATH = pathlib.Path.home() / "measurements"
+TEMP_ZIP_PATH = pathlib.Path.home() / "merged_measurements"
+ZIP_FILE_PATH = pathlib.Path.home() / "data"
 FIGURE_SAVE_PATH = pathlib.Path.home() / "OrangeBox/status"
 ENERGY_PATH = MEASUREMENT_PATH / "Power"
 DEFAULT_PLOT_WINDOW = 2
@@ -279,6 +281,53 @@ experimentPane = dbc.Row(
     align="center",
 )
 
+liveDataSettingsPane = dbc.Row(
+    [
+        dbc.Col(
+            [html.Label("Select sensor node:")],
+            width="auto",
+        ),
+        dbc.Col(
+            [
+                dcc.Dropdown(
+                    id="sensor-select",
+                    options=[],
+                    value="",
+                )
+            ],
+            width=2,
+        ),
+        dbc.Col(
+            [html.Label("How many hours to display?")],
+            width='auto',
+        ),
+        dbc.Col(
+            [
+                dbc.Input(
+                    type="number",
+                    value=DEFAULT_PLOT_WINDOW,
+                    min=1,
+                    max=12,
+                    id="time-select",
+                ),
+            ],
+            width=1,
+        ),
+        dbc.Col(
+            [
+                dbc.Button(
+                    "Download data",
+                    id="download-btn",
+                    outline=False,
+                    color="info",
+                    ),
+                dcc.Download(id="download-data")
+            ],
+            width={"size": "auto", "order": "last", "offset": 2},
+        )
+    ]
+)
+
 # Set up the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
 server = app.server
@@ -331,40 +380,7 @@ app.layout = dbc.Container(
         dbc.Row(
             [dbc.Col([html.H3("Live data plotting")], width=True)],
         ),
-        dbc.Row(
-            [
-                dbc.Col(
-                    [html.Label("Select sensor node:")],
-                    width="auto",
-                ),
-                dbc.Col(
-                    [
-                        dcc.Dropdown(
-                            id="sensor-select",
-                            options=[],
-                            value="",
-                        )
-                    ],
-                    width=2,
-                ),
-                dbc.Col(
-                    [html.Label("How many hours to display?")],
-                    width=2,
-                ),
-                dbc.Col(
-                    [
-                        dbc.Input(
-                            type="number",
-                            value=DEFAULT_PLOT_WINDOW,
-                            min=1,
-                            max=12,
-                            id="time-select",
-                        ),
-                    ],
-                    width=1,
-                ),
-            ]
-        ),
+        liveDataSettingsPane,
         # Live plot graph
         dbc.Row(
             [
@@ -484,12 +500,24 @@ def start_stop_experiment(start, stop):
 
 
 @app.callback(
+    Output("download-data", "data"),
+    Input("download-btn", "n_clicks"),
+    prevent_initial_call=True
+)
+def download_data(n_clicks):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
+
+    utils.merge_measurements(MEASUREMENT_PATH, TEMP_ZIP_PATH, ZIP_FILE_PATH)
+
+    return dcc.send_file(f"{ZIP_FILE_PATH}.zip")
+
+@app.callback(
     Output("dummy-div-other", "children", allow_duplicate=True),
     Input("orange_box-freq", "value"),
     prevent_initial_call=True,
 )
 def update_measure_freq(value):
-    print('should work')
     subprocess.run(f"sed -i 's/MEAS_INT=.*/MEAS_INT={value}/' ~/.bashrc", shell=True)
     return None
 

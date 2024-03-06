@@ -1,4 +1,8 @@
+import shutil
 import socket
+from pathlib import Path
+
+import pandas as pd
 
 try:
     import ruamel.yaml
@@ -64,3 +68,71 @@ def read_data_fields_from_file(file_path):
 def save_date_fields_to_file(config, file_path):
     with open(file_path, 'w') as file:
         yaml.dump(config, file)
+
+def merge_measurements(measurements_path, output_path, zip_file_path):
+    def load_and_validate_csv(file_path):
+        try:
+            df = pd.read_csv(file_path)
+        except pd.errors.EmptyDataError:
+            return None
+        if df.empty:
+            return None
+        return df
+
+    def _merge_measurements(measurements_path, output_path):
+        for path in measurements_path.iterdir():
+            if path.is_dir() and path.name == 'Power':
+                df_dict = {}
+                filename_dict = {}
+                for csv_file in sorted(path.glob('*.csv')):
+                    prefix = csv_file.stem.split('_')[0]
+                    df = load_and_validate_csv(csv_file)
+
+                    if df is not None:
+                        if prefix in df_dict:
+                            df_dict[prefix] = pd.concat([df_dict[prefix], df], ignore_index=True)
+                            filename_dict[prefix].append(csv_file)
+                        else:
+                            df_dict[prefix] = df
+                            filename_dict[prefix] = [csv_file]
+
+                for key in df_dict:
+                    # print('\n\t'.join(['Merging files:'] + [str(f) for f in merged_df]))
+                    sorted_files = sorted(filename_dict[key], key=lambda x: x.stem)
+                    base_file_name = sorted_files[0].stem
+                    out_dir_structure = 'Power'
+                    merged_file_path = output_path / out_dir_structure / f"{base_file_name}_merged_{len(sorted_files)}.csv"
+                    merged_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    df_dict[key].to_csv(merged_file_path, index=False)
+                    # print(f"Merging to {merged_file_path}")
+
+            elif path.suffix == '.csv':
+                csv_files = sorted(measurements_path.glob('*.csv'))
+                # print('\n\t'.join(['Merging files:'] + [str(f) for f in csv_files]))
+                if csv_files:
+                    base_file_name = csv_files[0].stem
+                    out_dir_structure = path.relative_to(path.parents[3]).parents[2]
+                    merged_file_path = output_path / out_dir_structure / f'{base_file_name}_merged_{len(csv_files)}.csv'
+                    merged_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    df_list = []
+                    for f in csv_files:
+                        df = load_and_validate_csv(f)
+                        if df is not None:
+                            df_list.append(df)
+                    if df_list:
+                        merged_df = pd.concat(df_list, ignore_index=True)
+                        merged_df.to_csv(merged_file_path, index=False)
+                    # print(f'Merged CSV files in {measurements_path} and saved as {merged_file_path}')
+                    return
+            else:
+                # print(f'Processing {path.resolve()}')
+                _merge_measurements(path, output_path)
+
+    measurements_path = Path(measurements_path)
+    output_path = Path(output_path)
+    _merge_measurements(measurements_path, output_path)
+
+    # Zip output directory and then delete it.
+    shutil.make_archive(str(zip_file_path.resolve()), 'zip', output_path.resolve())
+    shutil.rmtree(output_path.resolve())
