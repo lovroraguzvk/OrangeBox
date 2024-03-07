@@ -658,7 +658,7 @@ def update_plots(n, sensor_select, time_select, data_path):
     fig_data = {}
     fig_power = {}
 
-    if sensor_select.startswith("CYB"):
+    if sensor_select.startswith("ttyACM"):
         sensor_type = "MU"
         data_fields = [
             "temp_external",

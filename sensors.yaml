@@ -49,4 +49,4 @@ windows:
         panes:
             - CYB1:
                 - cd drivers/mu_interface/mu_interface/Sensor
-                - python3 main.py --port /dev/CYB1 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
+                - python3 main.py --port /dev/ttyACM0 --addr $SINK --dir $MEAS_DIR --int $MEAS_INT --multi
