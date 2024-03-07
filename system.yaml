@@ -20,7 +20,7 @@ root: ~/OrangeBox
 # on_project_stop: command
 
 # Runs in each window and pane before window/pane specific commands. Useful for setting up interpreter versions.
-pre_window: source /home/rock/OrangeBox/config/orange_box.config
+pre_window: source ~/OrangeBox/config/orange_box.config
 
 # Pass command line options to tmux. Useful for specifying a different tmux.conf.
 # tmux_options: -f ~/.tmux.mac.conf
@@ -44,12 +44,6 @@ windows:
     - Interface:
         layout: 'tiled'
         panes:
-            - Power:
-                - cd system
-                - sudo -E python3 i2c_sensors.py --addr $SINK --dir $MEAS_DIR/Power
-            - TelegramBot:
-                - cd system/telegram_bot/telegram_bot
-                - python3 telegram_bot.py
             - Interface:
                 - cd interface
                 - python3 user_app.py
