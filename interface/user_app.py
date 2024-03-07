@@ -80,6 +80,7 @@ settingsPane = dbc.Col(
                             "Write",
                             id="update-button",
                             color="primary",
+                            disabled=True,
                             className="ml-auto",
                             size="md",
                         ),
@@ -153,16 +154,27 @@ configPane = dbc.Col(
                 dbc.Col(
                     [
                         dbc.Button(
-                            "Shutdown", id="orange_box-shutdown", outline=True, color="danger", className="me-1"
+                            "Shutdown",
+                            id="orange_box-shutdown",
+                            outline=True,
+                            color="danger",
+                            className="me-1",
+                            disabled=True,
                         ),
-                        dbc.Button("Reboot", id="orange_box-reboot", outline=True, color="danger", className="me-1"),
+                        dbc.Button(
+                            "Reboot",
+                            id="orange_box-reboot",
+                            outline=True,
+                            color="danger",
+                            className="me-1",
+                            disabled=True,
+                        ),
+                        # TODO: Remove
                         dbc.Modal(
                             [
                                 dbc.ModalHeader(dbc.ModalTitle("IP address of connected Orange Box")),
                                 dbc.ModalBody("ip", id="modal-body"),
-                                dbc.ModalFooter(
-                                    dbc.Button("Close", id="close", className="ms-auto", n_clicks=0)
-                                ),
+                                dbc.ModalFooter(dbc.Button("Close", id="close", className="ms-auto", n_clicks=0)),
                             ],
                             id="modal",
                             is_open=False,
@@ -215,12 +227,7 @@ experimentPane = dbc.Row(
         ),
         dbc.Col(
             [
-                dbc.Button(
-                    "New experiment",
-                    id="new-experiment",
-                    outline=False,
-                    color="primary",
-                    className="me-1"),
+                dbc.Button("New experiment", id="new-experiment", outline=False, color="primary", className="me-1"),
             ]
         ),
         dbc.Col(
@@ -299,7 +306,7 @@ liveDataSettingsPane = dbc.Row(
         ),
         dbc.Col(
             [html.Label("How many hours to display?")],
-            width='auto',
+            width="auto",
         ),
         dbc.Col(
             [
@@ -320,11 +327,11 @@ liveDataSettingsPane = dbc.Row(
                     id="download-btn",
                     outline=False,
                     color="info",
-                    ),
-                dcc.Download(id="download-data")
+                ),
+                dcc.Download(id="download-data"),
             ],
             width={"size": "auto", "order": "last", "offset": 2},
-        )
+        ),
     ]
 )
 
@@ -512,6 +519,7 @@ def download_data(n_clicks):
 
     return dcc.send_file(f"{ZIP_FILE_PATH}.zip")
 
+
 @app.callback(
     Output("dummy-div-other", "children", allow_duplicate=True),
     Input("orange_box-freq", "value"),
@@ -667,14 +675,7 @@ def update_plots(n, sensor_select, time_select, data_path):
         data_fields = "all"
     elif sensor_select.startswith("Z"):
         sensor_type = "Zigbee"
-        data_fields = [
-            "temp_external",
-            "humidity_external",
-            "air_pressure",
-            "mag_X",
-            "mag_Y",
-            "mag_Z"
-        ]
+        data_fields = ["temp_external", "humidity_external", "air_pressure", "mag_X", "mag_Y", "mag_Z"]
     else:
         sensor_type = ""
         data_fields = []
