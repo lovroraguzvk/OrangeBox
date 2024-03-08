@@ -1,6 +1,6 @@
 location: drivers
 sources:
-  - repo: git@github.com:WatchPlant/mu_interface.git
+  - repo: git@github.com:lovroraguzvk/mu_interface.git
     name: mu_interface
     rev: orange_box
     type: git
@@ -11,28 +11,6 @@ sources:
       -
     scripts:
       - pip3 install -e .
-  - repo: git@github.com:WatchPlant/BLE_Sink.git
-    name: BLE_Sink
-    rev: main
-    type: git
-    params:
-    sparse_paths:
-      -
-    links:
-      -
-    scripts:
-      -
-  - repo: git@github.com:WatchPlant/Zigbee_Sink.git
-    name: Zigbee_Sink
-    rev: main
-    type: git
-    params:
-    sparse_paths:
-      -
-    links:
-      -
-    scripts:
-      -
 default_group: ''
 groups:
   -
@@ -48,25 +26,3 @@ sources_locked:
       -
     scripts:
       - pip3 install -e .
-  - repo: git@github.com:WatchPlant/BLE_Sink.git
-    name: BLE_Sink
-    rev: 3c4ef088d92b9c8c10a4c3b7327d8675975facfd
-    type: git
-    params:
-    sparse_paths:
-      -
-    links:
-      -
-    scripts:
-      -
-  - repo: git@github.com:WatchPlant/Zigbee_Sink.git
-    name: Zigbee_Sink
-    rev: cf2118be8e7e1b607e5c4a38a0fe7d7c22854cd0
-    type: git
-    params:
-    sparse_paths:
-      -
-    links:
-      -
-    scripts:
-      -
