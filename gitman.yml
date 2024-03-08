@@ -1,6 +1,6 @@
 location: drivers
 sources:
-  - repo: git@github.com:WatchPlant/mu_interface.git
+  - repo: git@github.com:lovroraguzvk/mu_interface.git
     name: mu_interface
     rev: orange_box
     type: git
