@@ -484,23 +484,36 @@ def new_experiment(n_clicks, hostname):
 @callback(
     Output("stop-experiment", "disabled"),
     Output("start-experiment", "disabled"),
-    Output("start-experiment", "outline"),
     Output("stop-experiment", "outline"),
+    Output("start-experiment", "outline"),
     Input("start-experiment", "n_clicks"),
     Input("stop-experiment", "n_clicks"),
-    prevent_initial_call=True,
 )
 def start_stop_experiment(start, stop):
     button_id = ctx.triggered_id if not None else ""
+    
+    tmux_session = "sensors"
+    next_active = "start"
 
     if button_id == "start-experiment":
-        subprocess.run(f"tmuxinator start -p ~/OrangeBox/sensors.yaml {os.getenv('RUN_MODE', '')}", shell=True)
-        return False, True, True, False
+        subprocess.run(f"tmuxinator start -p ~/OrangeBox/{tmux_session}.yaml {os.getenv('RUN_MODE', '')}", shell=True)
+        next_active = "stop"
     elif button_id == "stop-experiment":
-        subprocess.run("tmux send-keys -t sensors C-c", shell=True)
+        subprocess.run(f"tmux send-keys -t {tmux_session} C-c", shell=True)
         time.sleep(2)
-        subprocess.run("tmux kill-session -t sensors", shell=True)
-        return True, False, False, True
+        subprocess.run(f"tmux kill-session -t {tmux_session}", shell=True)
+        next_active = "start"
+    else:
+        try:
+            subprocess.run(['tmux', 'has-session', '-t', f'{tmux_session}'], capture_output=True, text=True, check=True)
+            next_active = "stop"
+        except subprocess.CalledProcessError:
+            next_active = "start"
+
+    if next_active == "start":
+        return True, False, True, False
+    else:
+        return False, True, False, True
 
 
 @callback(
